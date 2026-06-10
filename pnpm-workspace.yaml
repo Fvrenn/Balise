@@ -1,0 +1,6 @@
+allowBuilds:
+  '@sentry/cli': true
+  esbuild: true
+  msgpackr-extract: false
+  sharp: true
+  unrs-resolver: false

@@ -1,0 +1,1832 @@
+Introduction
+Cette section est non-normative.
+
+0.1 Contexte des WCAG 2§
+Les Règles pour l’accessibilité des contenus Web (WCAG) 2.1 définissent la façon de rendre les contenus Web plus accessibles aux personnes en situation de handicap. L’accessibilité couvre un large spectre de limitations fonctionnelles, telles que les limitations visuelles, auditives, physiques, cognitives, neurologiques ou encore celles liées à la parole, au langage ou à l’apprentissage. Bien que ces règles couvrent un éventail varié de problématiques, elles ne peuvent prétendre répondre aux besoins des personnes avec tous les types, les degrés ou les combinaisons possibles de limitations fonctionnelles. Ces règles rendent également les contenus Web plus utilisables par les individus dont les capacités changent en raison du vieillissement et améliorent souvent l’utilisabilité pour l’ensemble des utilisateurs.
+
+Les WCAG 2.1 sont développées selon le processus du W3C (en anglais) en collaboration avec différents individus et organisations provenant des quatre coins du globe, dans le but de fournir un cadre commun de normalisation pour l’accessibilité des contenus Web répondant aux besoins des individus, des organisations et des gouvernements de partout dans le monde. Les WCAG 2.1 se fondent sur les WCAG 2.0 [WCAG20], qui, elles-mêmes, sont fondées sur les WCAG 1.0 [WAI-WEBCONTENT] et sont conçues pour être largement appliquées à différentes technologies Web existantes ou à venir, en plus d’être vérifiables avec une combinaison de tests automatiques et d’évaluations manuelles. Pour une introduction aux WCAG, voir la Vue d’ensemble des Règles pour l’accessibilité des contenus Web (WCAG) (en anglais).
+
+Des défis importants ont été rencontrés dans le cadre de la définition de critères supplémentaires afin de prendre en compte les troubles cognitifs, linguistiques et d’apprentissage, notamment un court délai pour le développement. D’autres défis ont été rencontrés pour obtenir un consensus sur la testabilité, la capacité de mise en œuvre et les considérations internationales des propositions. Le travail se poursuivra dans ce domaine dans les futures versions des WCAG. Nous encourageons les auteurs à se référer à nos conseils supplémentaires sur l’amélioration de l’inclusion des personnes en situation de handicap, présentant notamment des troubles de l’apprentissage et cognitifs, les personnes malvoyantes, etc. (en anglais).
+
+L’accessibilité du Web ne dépend pas uniquement des contenus accessibles, mais également des navigateurs Web accessibles et des autres agents utilisateurs. Les outils d’édition jouent un rôle majeur dans l’accessibilité du Web. Pour une vue d’ensemble de la manière dont ces éléments d’interaction et de développement Web coopèrent, voir :
+
+Éléments essentiels de l’accessibilité du Web (en anglais)
+Vue d’ensemble des Règles pour l’accessibilité des agents utilisateurs (UAAG) (en anglais)
+Vue d’ensemble des Règles pour l’accessibilité des outils d’édition (ATAG) (en anglais)
+0.2 Les différents niveaux de lecture des WCAG 2§
+Les particuliers et les organisations qui utilisent les WCAG sont très variés et comprennent des concepteurs Web, des développeurs Web, des décideurs, des acheteurs, des enseignants et des étudiants. Afin de répondre aux besoins variés de ces publics, plusieurs niveaux de lecture sont proposés : de grands principes, des règles générales, des critères de succès testables ainsi qu’un riche ensemble de techniques suffisantes, de techniques recommandées et d’échecs fréquents documentés avec des exemples, des liens vers des ressources et du code.
+
+Les principes — Le premier niveau traite des quatre principes fondamentaux pour l’accessibilité des contenus Web : perceptible, utilisable, compréhensible et robuste. Voir aussi Comprendre les quatre principes de l’accessibilité (en anglais).
+
+Les règles — Après les principes il y a les règles. Les 13 règles donnent les objectifs de base que les auteurs doivent atteindre afin de rendre le contenu plus accessible pour les utilisateurs ayant différents types de limitations fonctionnelles. Les règles ne sont pas testables, mais elles fournissent la trame et les objectifs principaux pour aider les auteurs à comprendre les critères de succès et à mieux mettre en œuvre les techniques.
+
+Les critères de succès — Des critères de succès testables sont fournis pour chaque règle afin de permettre l’utilisation des WCAG 2.1 là où des exigences et des tests de conformité sont nécessaires, notamment pour la spécification de conception, l’achat, la réglementation et les accords contractuels. Afin de répondre aux besoins de divers groupes et de différents contextes, trois niveaux de conformité ont été définis : A (le plus bas), AA et AAA (le plus élevé). Des informations complémentaires sur les niveaux des WCAG peuvent être consultées dans Comprendre les niveaux de conformité (en anglais).
+
+Techniques suffisantes et techniques recommandées — Pour chaque règle et chaque critère de succès des WCAG 2.1, le groupe de travail a également documenté une grande variété de techniques. Ces techniques sont informatives et se divisent en deux catégories : celles qui sont suffisantes pour satisfaire au critère de succès et celles qui sont recommandées. Les techniques recommandées vont plus loin que ce qui est requis par chacun des critères de succès et elles permettent aux auteurs de mieux respecter les règles. Certaines techniques recommandées concernent des problèmes d’accessibilité qui ne sont pas traités par les critères de succès testables. Lorsque des échecs fréquents sont connus, ils sont aussi documentés. Voir également les techniques suffisantes et les techniques recommandées dans Comprendre les WCAG 2.1 (en anglais).
+
+Tous ces niveaux de lecture (les principes, les règles, les critères de succès ainsi que les techniques suffisantes et les techniques recommandées) forment un ensemble qui donne une aide sur la façon de créer un contenu plus accessible. Les auteurs sont encouragés à consulter et à appliquer tous les niveaux qu’ils peuvent mettre en œuvre, y compris les techniques recommandées, afin de répondre au mieux aux besoins du plus grand nombre possible d’utilisateurs.
+
+Notons que même du contenu conforme au niveau le plus élevé (AAA) ne sera pas accessible aux personnes ayant tous les types, les degrés ou les combinaisons de limitations fonctionnelles, en particulier dans les domaines cognitifs, du langage et de l’apprentissage. Les auteurs sont encouragés à prendre en compte l’ensemble des techniques, y compris les techniques recommandées, et à rechercher des conseils appropriés à propos des bonnes pratiques en vigueur afin de faire en sorte que les contenus Web soient accessibles, autant que possible, à cette communauté. Des métadonnées (en anglais) pourront aider l’utilisateur à trouver les contenus qui correspondent le mieux à ses besoins.
+
+0.3 Les documents d’accompagnement des WCAG 2.1§
+Le document des WCAG 2.1 est conçu pour satisfaire ceux qui ont besoin de standards techniques stables auxquels il est possible de faire référence. D’autres documents, appelés documents d’accompagnement, sont basés sur les WCAG 2.1. Ils répondent à d’autres fins et offrent la possibilité d’être mis à jour pour décrire comment les WCAG devront être appliquées pour les technologies futures. Les documents d’accompagnement comprennent :
+
+Comment satisfaire aux WCAG 2.1 (en anglais) — Une liste personnalisable de références rapides pour les WCAG 2.1 qui contient toutes les règles, les critères de succès et les techniques utilisables par les auteurs lorsqu’ils développent et évaluent les contenus Web. Ces références incluent le contenu des WCAG 2.0 et WCAG 2.1 et peuvent être filtrées de plusieurs façons pour aider les auteurs à se concentrer sur le contenu pertinent.
+
+Comprendre les WCAG 2.1 (en anglais) — Un guide pour comprendre et mettre en œuvre les WCAG 2.1. On y trouve un court document de « compréhension » pour chaque règle et chaque critère de succès dans les WCAG 2.1 ainsi que pour certains éléments clés.
+
+Les techniques pour les WCAG 2.1 (en anglais) — Un regroupement de techniques et d’échecs fréquents, chacun dans un document distinct contenant une description, des exemples, du code et des tests.
+
+Les documents des WCAG (en anglais) — Un diagramme et une description de la façon dont les documents techniques sont reliés entre eux.
+
+Voir la Vue d’ensemble des Règles pour l’accessibilité des contenus Web (en anglais) pour une description des éléments d’accompagnement, y compris les ressources éducatives en lien avec les WCAG 2. Des ressources supplémentaires qui couvrent des points tels que des analyses de rentabilité sur l’accessibilité, la planification des mises en œuvre d’améliorations de l’accessibilité des sites Web ou les politiques d’accessibilité sont décrits dans les ressources de la WAI (en anglais).
+
+0.4 Exigences pour les WCAG 2.1§
+Les WCAG 2.1 respectent les exigences relatives aux WCAG 2.1 (en anglais) qui, à leur tour, se fondent sur les exigences des WCAG 2.0. Les exigences structurent le cadre général des règles et assurent la rétrocompatibilité. Le groupe de travail a également utilisé un ensemble de critères d’acceptation moins formels pour les critères de succès, afin de s’assurer que le style et la qualité des critères de succès soient similaires à ceux des WCAG 2.0. Ces exigences ont eu pour effet de restreindre ce qui pouvait être inclus dans les WCAG 2.1. Cette contrainte était importante afin de préserver la nature de version mineure des WCAG 2.
+
+0.5 Comparaison avec les WCAG 2.0§
+Les WCAG 2.1 ont été élaborées dans le but d’améliorer les conseils d’accessibilité pour trois groupes principaux : les utilisateurs avec des troubles cognitifs ou d’apprentissage, les utilisateurs malvoyants et les utilisateurs en situation de handicap utilisant des dispositifs mobiles. De nombreuses solutions ont été proposées et évaluées pour répondre aux besoins de ces personnes, et une sélection de ces solutions a été affinée par le groupe de travail. Ce sont donc les exigences structurelles héritées des WCAG 2.0, combinées à la précision et à l’impact des propositions, et aux délais impartis qui ont conduit aux critères de succès inclus dans cette version. Le groupe de travail considère que les WCAG 2.1 font avancer progressivement les règles pour l’accessibilité des contenus Web dans tous ces domaines, mais souligne que ces règles ne répondent pas à tous les besoins des utilisateurs.
+
+Les WCAG 2.1 ont été développées à partir des WCAG 2.0 et sont rétrocompatibles avec elles, ce qui signifie que les pages Web conformes aux WCAG 2.1 sont également conformes aux WCAG 2.0. Les auteurs tenus par la réglementation de se conformer aux WCAG 2.0 pourront mettre à jour les contenus en suivant les WCAG 2.1 sans perdre en conformité par rapport aux WCAG 2.0. Les auteurs qui suivent les deux ensembles de règles doivent garder à l’esprit les différences suivantes :
+
+0.5.1 Nouveautés dans les WCAG 2.1§
+Les WCAG 2.1 élargissent les WCAG 2.0 avec de nouveaux critères de succès, leurs définitions respectives, des règles dont le rôle est d’organiser les nouveaux éléments, et quelques ajouts à la section Conformité. Cette approche additive permet d’expliquer clairement que les sites qui respectent les WCAG 2.1 respectent également les WCAG 2.0, répondant ainsi aux obligations de conformité prévues par les WCAG 2.0. Dans le but de fournir une meilleure accessibilité et d’anticiper les futurs changements de réglementation, le groupe de travail sur les règles d’accessibilité recommande que les sites adoptent les WCAG 2.1 comme nouvelle référence de conformité, même si les exigences officielles font mention des WCAG 2.0.
+
+Les critères de succès suivants sont nouveaux dans les WCAG 2.1 :
+
+1.3.4 Orientation (AA)
+1.3.5 Identifier la finalité de la saisie (AA)
+1.3.6 Identifier la fonction (AAA)
+1.4.10 Redistribution (AA)
+1.4.11 Contraste du contenu non textuel (AA)
+1.4.12 Espacement du texte (AA)
+1.4.13 Contenu au survol ou au focus (AA)
+2.1.4 Raccourcis clavier utilisant des caractères (A)
+2.2.6 Délais d’expiration (AAA)
+2.3.3 Animation résultant d’interactions (AAA)
+2.5.1 Gestes pour le contrôle du pointeur (A)
+2.5.2 Annulation de l’action du pointeur (A)
+2.5.3 Étiquette dans le nom (A)
+2.5.4 Activation par le mouvement (A)
+2.5.5 Taille de la cible (AAA)
+2.5.6 Modalités d’entrées concurrentes (AAA)
+4.1.3 Messages d’état (AA)
+Beaucoup de ces critères de succès font référence à de nouveaux termes qui ont également été ajoutés au glossaire et font partie des exigences normatives des critères de succès.
+
+Dans la section Conformité, une troisième note sur les variantes de page a été ajoutée à la sous-section Pages complètes, et une option pour des métadonnées lisibles par machine a été ajoutée à la sous-section Éléments optionnels d’une déclaration de conformité.
+
+0.5.2 Numérotation dans les WCAG 2.1§
+Afin d’éviter toute confusion parmi les responsables de mise en œuvre pour qui la rétrocompatibilité avec les WCAG 2.0 est déterminante, les nouveaux critères de succès des WCAG 2.1 ont été ajoutés à la fin de la liste des critères de succès dans leur règle respective. Cela évite de devoir modifier la numérotation des critères de succès, déjà établie par les WCAG 2.0 ; une nouvelle numérotation serait nécessaire si les nouveaux critères de succès étaient insérés entre les critères de succès existants au sein d’une règle. Or suivre la numérotation existante signifie que les critères de succès de chaque règle ne sont plus organisés par niveau de conformité. L’ordre des critères de succès indiqué au sein de chaque règle n’est plus représentatif du niveau de conformité associé à ces critères ; désormais, seul l’indicateur du niveau de conformité (A/AA/AAA) attribué à chaque critère de succès informera sur le niveau de conformité. Le document « Comment satisfaire aux WCAG (Référence rapide) » (en anglais) permet de visualiser les critères de succès regroupés par niveau de conformité, et offre de nombreuses options pour filtrer et trier les critères.
+
+0.5.3 Conformité aux WCAG 2.1§
+Les WCAG 2.1 utilisent le même modèle de conformité que les WCAG 2.0, avec quelques ajouts, modèle qui est décrit dans la section Conformité. Ce modèle prévoit que les sites conformes aux WCAG 2.1 sont également conformes aux WCAG 2.0, ce qui signifie qu’ils répondent aux exigences de toute réglementation faisant référence aux WCAG 2.0, tout en proposant une réponse améliorée aux besoins des utilisateurs du Web tel qu’il existe actuellement.
+
+0.6 Versions ultérieures des règles d’accessibilité§
+Parallèlement aux WCAG 2.1, le groupe de travail sur les règles d’accessibilité élabore une autre version majeure des règles d’accessibilité. Le résultat de ce travail devrait être une restructuration plus importante des règles sur l’accessibilité du Web que ce qui serait réaliste de faire pour les versions mineures ultérieures des WCAG 2. Le travail suit une méthodologie de conception axée sur la recherche et centrée sur l’utilisateur afin de produire le résultat le plus efficace et le plus souple possible, incluant des informations relatives aux rôles des différents intervenants lors de la création de contenu, au support des agents utilisateur et au support des outils d’édition. Comme il s’agit d’un travail se déroulant sur plusieurs années, les WCAG 2.1 sont une mesure provisoire nécessaire pour fournir des règles actualisées sur l’accessibilité du Web afin de refléter les changements intervenus sur le Web depuis la publication des WCAG 2.0. Le groupe de travail pourra également développer des versions intermédiaires supplémentaires, dont les WCAG 2.2, dans un délai court similaire afin de fournir des ressources supplémentaires en attendant que la version majeure soit achevée.
+
+1. Perceptible§
+L’information et les composants de l’interface utilisateur doivent être présentés à l’utilisateur de façon à ce qu’il puisse les percevoir.
+
+Règle 1.1 Équivalents textuels§
+Proposer des équivalents textuels à tout contenu non textuel qui pourra alors être présenté sous d’autres formes selon les besoins de l’utilisateur : grands caractères, braille, synthèse vocale, symboles ou langage simplifié.
+
+Critère de succès 1.1.1 Contenu non textuel§
+Comprendre Contenu non textuel (en anglais)|
+Comment satisfaire à Contenu non textuel (en anglais)(Niveau A)
+Tout contenu non textuel présenté à l’utilisateur a un équivalent textuel qui remplit une fonction équivalente sauf dans les situations énumérées ci-dessous.
+
+Composant d’interface ou de saisie
+si le contenu non textuel est un composant d’interface ou s’il permet la saisie d’informations par l’utilisateur, alors il a un nom qui décrit sa fonction. (Se référer au Critère de succès 4.1.2 pour des exigences supplémentaires à propos des composants d’interfaces utilisateur ou des contenus qui permettent la saisie d’informations par l’utilisateur.)
+
+Média temporel
+si le contenu non textuel est un média temporel, alors l’équivalent textuel fournit au moins une identification descriptive du contenu non textuel. (Se référer à la Règle 1.2 pour des exigences supplémentaires concernant les médias temporels.)
+
+Test
+si le contenu non textuel est un test ou un exercice qui serait invalide s’il était présenté en texte, alors l’équivalent textuel fournit au moins une identification descriptive du contenu non textuel.
+
+Contenu sensoriel
+si le contenu non textuel vise d’abord à créer une expérience sensorielle spécifique, l’équivalent textuel fournit au moins une identification descriptive de ce contenu non textuel.
+
+CAPTCHA 
+si ce contenu non textuel vise à confirmer que le contenu est consulté par une personne plutôt que par un ordinateur, alors un équivalent textuel est fourni pour identifier et décrire la fonction du contenu non textuel, et des formes alternatives du CAPTCHA sont proposées pour différents types de perception sensorielle afin d’accommoder différents types de limitations fonctionnelles.
+
+Décoration, formatage, invisibilité
+si le contenu non textuel est purement décoratif, s’il est utilisé seulement pour un formatage visuel ou s’il n’est pas présenté à l’utilisateur, alors il est implémenté de manière à être ignoré par les technologies d’assistance.
+
+Règle 1.2 Média temporel§
+Proposer des versions de remplacement aux médias temporels.
+
+Critère de succès 1.2.1 Contenus seulement audio et seulement vidéo (pré-enregistrés)§
+Comprendre Contenus seulement audio et seulement vidéo (pré-enregistrés) (en anglais)|
+Comment satisfaire à Contenus seulement audio et seulement vidéo (pré-enregistrés) (en anglais)(Niveau A)
+Pour des médias pré-enregistrés seulement audio et pré-enregistrés seulement vidéo, sauf si l’audio ou la vidéo sont un média de remplacement pour un texte et qu’ils sont clairement identifiés comme tels, les points suivants sont vrais :
+
+Contenu pré-enregistré seulement audio
+fournir une version de remplacement pour un média temporel, présentant une information équivalente au contenu seulement audio.
+
+Contenu pré-enregistré seulement vidéo
+fournir, soit une version de remplacement pour un média temporel, soit une piste audio (présentant une information équivalente) pour un contenu pré-enregistré seulement vidéo.
+
+Critère de succès 1.2.2 Sous-titres (pré-enregistrés)§
+Comprendre Sous-titres (pré-enregistrés) (en anglais)|
+Comment satisfaire à Sous-titres (pré-enregistrés) (en anglais)(Niveau A)
+Fournir des sous-titres pour tout contenu audio pré-enregistré dans un média synchronisé, excepté lorsque le média est un média de remplacement pour un texte et qu’il est clairement identifié comme tel.
+
+Critère de succès 1.2.3 Audio-description ou version de remplacement pour un média temporel (pré-enregistré)§
+Comprendre Audio-description ou version de remplacement pour un média temporel (pré-enregistré) (en anglais)|
+Comment satisfaire à Audio-description ou version de remplacement pour un média temporel (pré-enregistré) (en anglais)(Niveau A)
+Fournir une version de remplacement pour un média temporel ou une audio-description du contenu vidéo pré-enregistré pour un média synchronisé, excepté quand le média est un média de remplacement pour un texte et qu’il est clairement identifié comme tel.
+
+Critère de succès 1.2.4 Sous-titres (en direct)§
+Comprendre Sous-titres (en direct) (en anglais)|
+Comment satisfaire à Sous-titres (en direct) (en anglais)(Niveau AA)
+Fournir des sous-titres pour tout contenu audio en direct, sous forme de média synchronisé.
+
+Critère de succès 1.2.5 Audio-description (pré-enregistrée)§
+Comprendre Audio-description (pré-enregistrée) (en anglais)|
+Comment satisfaire à Audio-description (pré-enregistrée) (en anglais)(Niveau AA)
+Fournir une audio-description pour tout contenu vidéo pré-enregistré, sous forme de média synchronisé.
+
+Critère de succès 1.2.6 Langue des signes (pré-enregistrée)§
+Comprendre Langue des signes (pré-enregistrée) (en anglais)|
+Comment satisfaire à Langue des signes (pré-enregistrée) (en anglais)(Niveau AAA)
+Fournir une interprétation en langue des signes pour tout contenu audio pré-enregistré, sous forme de média synchronisé.
+
+Critère de succès 1.2.7 Audio-description étendue (pré-enregistrée)§
+Comprendre Audio-description étendue (pré-enregistrée) (en anglais)|
+Comment satisfaire à Audio-description étendue (pré-enregistrée) (en anglais)(Niveau AAA)
+Lorsque les blancs présents dans le fond sonore ne sont pas suffisants pour permettre à l’audio-description de transmettre le sens de la vidéo, fournir une audio-description étendue pour tout contenu vidéo pré-enregistré sous la forme de média synchronisé.
+
+Critère de succès 1.2.8 Version de remplacement pour un média temporel (pré-enregistrée)§
+Comprendre Version de remplacement pour un média temporel (pré-enregistrée) (en anglais)|
+Comment satisfaire à Version de remplacement pour un média temporel (pré-enregistrée) (en anglais)(Niveau AAA)
+Fournir une version de remplacement pour un média temporel, pour tout contenu de type média synchronisé pré-enregistré et pour tout média pré-enregistré seulement vidéo.
+
+Critère de succès 1.2.9 Seulement audio (en direct)§
+Comprendre Seulement audio (en direct) (en anglais)|
+Comment satisfaire à Seulement audio (en direct) (en anglais)(Niveau AAA)
+Fournir une version de remplacement pour un média temporel, donnant une information équivalente pour un contenu seulement audio en direct.
+
+Règle 1.3 Adaptable§
+Créer un contenu qui puisse être présenté de différentes manières sans perte d’information ni de structure (par exemple avec une mise en page simplifiée).
+
+Critère de succès 1.3.1 Information et relations§
+Comprendre Information et relations (en anglais)|
+Comment satisfaire à Information et relations (en anglais)(Niveau A)
+L’information, la structure, et les relations véhiculées par la présentation peuvent être déterminées par un programme informatique ou sont disponibles sous forme de texte.
+
+Critère de succès 1.3.2 Ordre séquentiel logique§
+Comprendre Ordre séquentiel logique (en anglais)|
+Comment satisfaire à Ordre séquentiel logique (en anglais)(Niveau A)
+Lorsque l’ordre de présentation du contenu affecte sa signification, un ordre de lecture correct peut être déterminé par un programme informatique.
+
+Critère de succès 1.3.3 Caractéristiques sensorielles§
+Comprendre Caractéristiques sensorielles (en anglais)|
+Comment satisfaire à Caractéristiques sensorielles (en anglais)(Niveau A)
+Les instructions données pour la compréhension et l’utilisation du contenu ne doivent pas reposer uniquement sur les caractéristiques sensorielles des éléments comme la forme, la couleur, la taille, l’emplacement visuel, l’orientation ou le son.
+
+Note
+Pour les exigences liées à la couleur, se référer à la Règle 1.4.
+
+Critère de succès 1.3.4 Orientation§
+Comprendre Orientation (en anglais)|
+Comment satisfaire à Orientation (en anglais)(Niveau AA)
+La consultation et le fonctionnement du contenu ne sont pas limités à une seule orientation de l’affichage, comme le portrait ou le paysage, à moins qu’une orientation spécifique de l’affichage ne soit essentielle.
+
+Note
+On compte parmi les exemples où une orientation spécifique de l’affichage est essentielle : un chèque de banque, une application de piano, des diapositives pour un projecteur ou une télévision, ou un contenu de réalité virtuelle où l’orientation binaire de l’affichage n’est pas applicable.
+
+Critère de succès 1.3.5 Identifier la finalité de la saisie§
+Comprendre Identifier la finalité de la saisie (en anglais)|
+Comment satisfaire à Identifier la finalité de la saisie (en anglais)(Niveau AA)
+La finalité de chaque champ de saisie recueillant des informations sur l’utilisateur peut être déterminée par un programme informatique lorsque :
+
+Le champ de saisie répond à une finalité identifiée dans la section Finalités de saisie des composants d’interface utilisateur ; et
+Le contenu est implémenté via des technologies permettant d’identifier la finalité de la saisie attendue pour le champ.
+Critère de succès 1.3.6 Identifier la fonction§
+Comprendre Identifier la fonction (en anglais)|
+Comment satisfaire à Identifier la fonction (en anglais)(Niveau AAA)
+Dans un contenu implémenté via un langage de balisage, la fonction des composants d’interface utilisateur, des icônes et des régions peut être déterminée par un programme informatique.
+
+Règle 1.4 Distinguable§
+Faciliter la perception visuelle et auditive du contenu par l’utilisateur, notamment en séparant le premier plan de l’arrière-plan.
+
+Critère de succès 1.4.1 Utilisation de la couleur§
+Comprendre Utilisation de la couleur (en anglais)|
+Comment satisfaire à Utilisation de la couleur (en anglais)(Niveau A)
+La couleur n’est pas utilisée comme la seule façon de véhiculer de l’information, d’indiquer une action, de solliciter une réponse ou de distinguer un élément visuel.
+
+Note
+Ce critère de succès traite spécifiquement de la perception des couleurs. Les autres formes de perception sont traitées à la règle 1.3 comme l’accès à la couleur par programme informatique et les autres formes de codage de la présentation visuelle.
+
+Critère de succès 1.4.2 Contrôle du son§
+Comprendre Contrôle du son (en anglais)|
+Comment satisfaire à Contrôle du son (en anglais)(Niveau A)
+Si du son sur une page Web est audible automatiquement pendant plus de 3 secondes, un mécanisme est disponible pour le mettre en pause, l’arrêter ou pour en contrôler le volume de façon indépendante du niveau de volume du système général.
+
+Note
+Puisque tout contenu ne satisfaisant pas à ce critère de succès peut interférer avec la capacité de l’utilisateur à exploiter la page entière, tout le contenu présent dans la page Web (qu’il soit utilisé pour satisfaire à d’autres critères de succès ou non) doit satisfaire à ce critère de succès. Voir l’exigence de conformité 5 : Non-interférence.
+
+Critère de succès 1.4.3 Contraste (minimum)§
+Comprendre Contraste (minimum) (en anglais)|
+Comment satisfaire à Contraste (minimum) (en anglais)(Niveau AA)
+La présentation visuelle du texte et du texte sous forme d’image a un rapport de contraste d’au moins 4,5:1, sauf dans les cas suivants :
+
+Texte agrandi
+le texte agrandi et le texte agrandi sous forme d’image ont un rapport de contraste d’au moins 3:1.
+
+Texte décoratif
+aucune exigence de contraste pour le texte ou le texte sous forme d’image qui fait partie d’un composant d’interface utilisateur inactif, qui est purement décoratif, qui est invisible pour tous ou qui est une partie d’une image contenant un autre contenu significatif.
+
+Logotypes
+aucune exigence de contraste pour le texte faisant partie d’un logo ou d’un nom de marque.
+
+Critère de succès 1.4.4 Redimensionnement du texte§
+Comprendre Redimensionnement du texte (en anglais)|
+Comment satisfaire à Redimensionnement du texte (en anglais)(Niveau AA)
+À l’exception des sous-titres et du texte sous forme d’image, le texte peut être redimensionné jusqu’à 200 pour cent sans l’aide d’une technologie d’assistance et sans perte de contenu ou de fonctionnalité.
+
+Critère de succès 1.4.5 Texte sous forme d’image§
+Comprendre Texte sous forme d’image (en anglais)|
+Comment satisfaire à Texte sous forme d’image (en anglais)(Niveau AA)
+Si les technologies utilisées peuvent réaliser la présentation visuelle, du texte est utilisé pour véhiculer l’information plutôt que du texte sous forme d’image sauf dans les cas suivants :
+
+Personnalisable
+le texte sous forme d’image peut être personnalisé visuellement selon les exigences de l’utilisateur ;
+
+Essentielle
+une présentation spécifique du texte est essentielle à l’information véhiculée.
+
+Note
+Les logotypes sont considérés comme essentiels (le texte qui fait partie d’un logo ou d’un nom de marque).
+
+Critère de succès 1.4.6 Contraste (amélioré)§
+Comprendre Contraste (amélioré) (en anglais)|
+Comment satisfaire à Contraste (amélioré) (en anglais)(Niveau AAA)
+La présentation visuelle du texte et du texte sous forme d’image a un rapport de contraste d’au moins 7:1, sauf dans les cas suivants :
+
+Texte agrandi
+le texte agrandi et le texte agrandi sous forme d’image ont un rapport de contraste d’au moins 4,5:1 ;
+
+Texte décoratif
+aucune exigence de contraste pour le texte ou le texte sous forme d’image qui fait partie d’un composant d’interface utilisateur inactif, qui est purement décoratif, qui est invisible pour tous ou qui est une partie d’une image contenant un autre contenu significatif.
+
+Logotypes
+aucune exigence de contraste pour le texte faisant partie d’un logo ou d’un nom de marque.
+
+Critère de succès 1.4.7 Arrière-plan sonore de faible volume ou absent§
+Comprendre Arrière-plan sonore de faible volume ou absent (en anglais)|
+Comment satisfaire à Arrière-plan sonore de faible volume ou absent (en anglais)(Niveau AAA)
+Pour un contenu seulement audio pré-enregistré qui (1) contient principalement de la parole au premier plan, (2) n’est pas un CAPTCHA ou un logo sonore et (3) qui n’est pas une vocalisation dont l’intention est principalement d’être musicale comme une chanson ou un rap, au moins l’une des conditions suivantes est vraie :
+
+Sans arrière-plan
+le contenu audio ne contient pas d’arrière-plan sonore.
+
+Désactivation
+l’arrière-plan sonore peut être désactivé.
+
+20 dB
+l’arrière-plan sonore est au moins 20 décibels plus faible que le contenu parlé au premier plan sauf pour certains effets sonores occasionnels durant seulement une ou deux secondes.
+
+Note
+Par la définition du « décibel », le volume de l’arrière-plan sonore correspondant à cette exigence est approximativement quatre fois plus faible que le contenu parlé au premier plan.
+
+Critère de succès 1.4.8 Présentation visuelle§
+Comprendre Présentation visuelle (en anglais)|
+Comment satisfaire à Présentation visuelle (en anglais)(Niveau AAA)
+Pour la présentation visuelle des blocs de texte, un mécanisme est disponible permettant de réaliser ce qui suit :
+
+Les couleurs de premier plan et d’arrière-plan peuvent être choisies par l’utilisateur.
+La largeur n’excède pas 80 caractères ou glyphes (40 si CJK).
+Le texte n’est pas justifié (aligné simultanément à droite et à gauche).
+L’espacement entre les lignes (interlignage) est d’une valeur d’au moins 1,5 dans les paragraphes et l’espacement entre les paragraphes est au moins 1,5 fois plus grand que la valeur de l’interligne.
+La taille du texte peut être redimensionnée jusqu’à 200 pour cent sans l’aide d’une technologie d’assistance et sans que l’utilisateur soit obligé de faire défiler le texte horizontalement pour lire une ligne complète dans une fenêtre plein écran.
+Critère de succès 1.4.9 Texte sous forme d’image (sans exception)§
+Comprendre Texte sous forme d’image (sans exception) (en anglais)|
+Comment satisfaire à Texte sous forme d’image (sans exception) (en anglais)(Niveau AAA)
+Le texte sous forme d’image est utilisé seulement pour du texte purement décoratif ou lorsqu’une présentation spécifique du texte est essentielle à l’information véhiculée.
+
+Note
+Les logotypes (le texte qui fait partie d’un logo ou d’un nom de marque) sont considérés comme essentiels.
+
+Critère de succès 1.4.10 Redistribution§
+Comprendre Redistribution (en anglais)|
+Comment satisfaire à Redistribution (en anglais)(Niveau AA)
+Le contenu peut être présenté sans perte d’information ou de fonctionnalité et sans nécessité de défilement dans les deux dimensions pour :
+
+un contenu à défilement vertical avec une largeur équivalente à 320 pixels CSS ;
+un contenu à défilement horizontal avec une hauteur équivalente à 256 pixels CSS.
+Sauf pour les parties du contenu dont l’utilisation ou la compréhension nécessite une mise en page en deux dimensions.
+
+Note
+320 pixels CSS équivaut à une largeur d’affichage initiale de 1280 pixels CSS avec un zoom de 400 %. Pour les contenus Web conçus pour défiler horizontalement (par exemple, avec du texte vertical), la valeur de 256 pixels CSS équivaut à une hauteur d’affichage initiale de 1024 pixels avec un zoom de 400 %.
+
+Note
+On compte parmi les exemples de contenu nécessitant une mise en page en deux dimensions : les images, les cartes, les diagrammes, les vidéos, les jeux, les présentations, les tableaux de données, et les interfaces où il est nécessaire de garder les barres d’outils visibles pendant la manipulation du contenu.
+
+Critère de succès 1.4.11 Contraste du contenu non textuel§
+Comprendre Contraste du contenu non textuel (en anglais)|
+Comment satisfaire à Contraste du contenu non textuel (en anglais)(Niveau AA)
+La présentation visuelle des éléments suivants a un rapport de contraste d’au moins 3:1 avec la ou les couleurs adjacentes :
+
+Composants d’interface utilisateur
+informations visuelles nécessaires à l’identification des composants et des états de l’interface utilisateur, à l’exception des composants inactifs ou lorsque l’apparence du composant est déterminée par l’agent utilisateur et non modifiée par l’auteur ;
+Objets graphiques
+parties d’éléments graphiques nécessaires à la compréhension du contenu, sauf si une présentation spécifique de ces éléments est essentielle à l’information transmise.
+Critère de succès 1.4.12 Espacement du texte§
+Comprendre Espacement du texte (en anglais)|
+Comment satisfaire à Espacement du texte (en anglais)(Niveau AA)
+Dans un contenu implémenté via un langage de balisage qui prend en charge les propriétés de style de texte suivantes, il n’y a aucune perte de contenu ou de fonctionnalité lorsqu’on applique toutes les valeurs ci-dessous sans modifier aucune autre propriété de style :
+
+La hauteur de ligne (interlignage) définie à au moins 1,5 fois la taille de la police ;
+L’espacement entre les paragraphes consécutifs défini à au moins 2 fois la taille de la police ;
+L’espacement des lettres (interlettrage) défini à au moins 0,12 fois la taille de la police ;
+L’espacement entre les mots défini à au moins 0,16 fois la taille de la police.
+Exception : les langues et systèmes d’écritures qui n’utilisent pas une ou plusieurs de ces propriétés de style de texte pour le texte écrit peuvent être conformes en utilisant uniquement les propriétés qui existent pour cette combinaison de langue et de système d’écriture.
+
+Critère de succès 1.4.13 Contenu au survol ou au focus§
+Comprendre Contenu au survol ou au focus (en anglais)|
+Comment satisfaire à Contenu au survol ou au focus (en anglais)(Niveau AA)
+Lorsque la réception puis le retrait du survol du pointeur ou du focus du clavier déclenche l’affichage puis le masquage d’un contenu additionnel, les éléments suivants sont vrais :
+
+Masquer
+il existe un mécanisme permettant de masquer le contenu additionnel sans déplacer le pointeur ou le focus du clavier, à moins que le contenu additionnel ne communique une erreur de saisie ou ne masque ni ne remplace un autre contenu ;
+Survoler
+si le survol du pointeur peut déclencher le contenu additionnel, alors le pointeur peut être déplacé sur le contenu additionnel sans que celui-ci disparaisse ;
+Persister
+le contenu additionnel reste visible jusqu’à ce que le survol ou le focus soit retiré, que l’utilisateur le masque ou que ses informations ne soient plus valables.
+Exception : la présentation visuelle du contenu additionnel est contrôlée par l’agent utilisateur et n’est pas modifiée par l’auteur.
+
+Note
+Parmi les exemples de contenu additionnel contrôlé par l’agent utilisateur figurent les infobulles du navigateur créées à l’aide de l’attribut HTML title.
+
+Note
+Les infobulles personnalisées, les sous-menus et autres fenêtres non modales qui s’affichent au survol et à la prise de focus sont des exemples de contenu additionnel couvert par ce critère.
+
+2. Utilisable§
+Les composants de l’interface utilisateur et de navigation doivent être utilisables.
+
+Règle 2.1 Accessibilité au clavier§
+Rendre toutes les fonctionnalités accessibles au clavier.
+
+Critère de succès 2.1.1 Clavier§
+Comprendre Clavier (en anglais)|
+Comment satisfaire à Clavier (en anglais)(Niveau A)
+Toutes les fonctionnalités du contenu sont utilisables à l’aide d’une interface clavier sans exiger un rythme de frappe propre à l’utilisateur, sauf lorsque la fonction sous-jacente nécessite une saisie qui dépend du tracé du mouvement effectué par l’utilisateur et pas seulement des points de départ et d’arrivée de ce tracé.
+
+Note
+Cette exception ne concerne que la fonction sous-jacente et non la technique de saisie. Par exemple, lorsqu’on utilise l’écriture manuscrite pour saisir du texte, la technique de saisie (l’écriture manuscrite) nécessite une saisie qui dépend d’un tracé, mais la fonction sous-jacente (la saisie de texte) ne le requiert pas.
+
+Note
+Cela n’interdit pas et ne devrait pas décourager l’utilisation de la souris ou de toute autre méthode de saisie en plus de l’utilisation du clavier.
+
+Critère de succès 2.1.2 Pas de piège au clavier§
+Comprendre Pas de piège au clavier (en anglais)|
+Comment satisfaire à Pas de piège au clavier (en anglais)(Niveau A)
+Si le focus du clavier peut être positionné sur un élément de la page à l’aide d’une interface clavier, réciproquement, il peut être déplacé hors de ce même composant simplement à l’aide d’une interface clavier et, si ce déplacement exige plus que l’utilisation d’une simple touche flèche ou tabulation ou toute autre méthode standard de sortie, l’utilisateur est informé de la méthode permettant de déplacer le focus hors de ce composant.
+
+Note
+Puisque tout contenu ne satisfaisant pas à ce critère de succès peut interférer avec la capacité de l’utilisateur à exploiter la page entière, tout le contenu présent dans la page Web (qu’il soit utilisé pour satisfaire à d’autres critères de succès ou non) doit satisfaire à ce critère de succès. Voir l’exigence de conformité 5 : Non-interférence.
+
+Critère de succès 2.1.3 Clavier (pas d’exception)§
+Comprendre Clavier (pas d’exception) (en anglais)|
+Comment satisfaire à Clavier (pas d’exception) (en anglais)(Niveau AAA)
+Toutes les fonctionnalités du contenu sont utilisables à l’aide d’une interface clavier sans exiger un rythme de frappe propre à l’utilisateur.
+
+Critère de succès 2.1.4 Raccourcis clavier utilisant des caractères§
+Comprendre Raccourcis clavier utilisant des caractères (en anglais)|
+Comment satisfaire à Raccourcis clavier utilisant des caractères (en anglais)(Niveau A)
+Si un raccourci clavier est implémenté dans du contenu en utilisant uniquement des caractères de type lettres (y compris les majuscules et les minuscules), des signes de ponctuation, des chiffres ou des symboles, alors au moins l’une des conditions suivantes est vraie :
+
+Désactiver
+un mécanisme est disponible pour désactiver le raccourci ;
+Réassigner
+un mécanisme est disponible pour réassigner le raccourci afin d’utiliser un ou plusieurs caractères non imprimables du clavier (par exemple, Ctrl, Alt, etc.) ;
+Actif uniquement au focus
+le raccourci clavier pour un composant d’interface utilisateur n’est actif que lorsque ce composant a le focus.
+Règle 2.2 Délai suffisant§
+Laisser à l’utilisateur suffisamment de temps pour lire et utiliser le contenu.
+
+Critère de succès 2.2.1 Réglage du délai§
+Comprendre Réglage du délai (en anglais)|
+Comment satisfaire à Réglage du délai (en anglais)(Niveau A)
+Pour chaque limite de temps fixée par le contenu, au moins l’un des points suivants est vrai :
+
+Suppression
+l’utilisateur a la possibilité de supprimer la limite de temps avant de la rencontrer ; ou
+
+Ajustement
+l’utilisateur a la possibilité d’ajuster la limite de temps avant de la rencontrer dans un intervalle d’au moins dix fois la durée paramétrée par défaut ; ou
+
+Extension
+l’utilisateur est averti avant que la limite de temps n’expire et il lui est accordé au moins 20 secondes pour étendre cette limite par une action simple (par exemple, « appuyer sur la barre d’espace ») et l’utilisateur a la possibilité d’étendre la limite de temps au moins dix fois ; ou
+
+L’exception du temps réel
+la limite de temps est une partie constitutive d’un événement en temps réel (par exemple, une enchère) et aucune alternative n’est possible ; ou
+
+L’exception de la limite essentielle
+la limite de temps est essentielle et l’étendre invaliderait alors l’activité ; ou
+
+L’exception des 20 heures
+la limite de temps est supérieure à 20 heures.
+
+Note
+Ce critère de succès permet de s’assurer que les utilisateurs peuvent compléter leurs tâches sans changement inattendu de contenu ou de contexte résultant de la limite de temps. Il devrait être considéré conjointement avec le critère de succès 3.2.1, qui pose des limites aux changements de contenu ou de contexte résultant d’une action de l’utilisateur.
+
+Critère de succès 2.2.2 Mettre en pause, arrêter, masquer§
+Comprendre Mettre en pause, arrêter, masquer (en anglais)|
+Comment satisfaire à Mettre en pause, arrêter, masquer (en anglais)(Niveau A)
+Pour toute information en mouvement, clignotante, défilante ou mise à jour automatiquement, tous les points suivants sont vrais :
+
+Déplacement, clignotement, défilement
+pour toute information en mouvement, clignotante ou défilante qui (1) démarre automatiquement, (2) dure plus de cinq secondes et (3) est présentée conjointement avec un autre contenu, il y a un mécanisme à la disposition de l’utilisateur pour la mettre en pause, l’arrêter ou la masquer, à moins que le mouvement, le clignotement ou le défilement s’avère un élément essentiel au bon déroulement de l’activité; et
+
+Mise à jour automatique
+pour toute information mise à jour automatiquement qui (1) démarre automatiquement (2) et est présentée conjointement avec un autre contenu, il y a un mécanisme à la disposition de l’utilisateur pour la mettre en pause, l’arrêter ou pour en contrôler la fréquence des mises à jour à moins que la mise à jour automatique s’avère essentielle au bon déroulement de l’activité.
+
+Note
+Pour les exigences relatives au contenu scintillant ou flashant, se référer à la règle 2.3.
+
+Note
+Puisque tout contenu ne satisfaisant pas à ce critère de succès peut interférer avec la capacité de l’utilisateur à exploiter la page entière, tout le contenu présent dans la page Web (qu’il soit utilisé pour satisfaire à d’autres critères de succès ou non) doit satisfaire à ce critère de succès. Lire Exigence de conformité 5 : Non-interférence.
+
+Note
+Il n’est pas exigé que le contenu mis à jour périodiquement par logiciel ou diffusé en flux à l’agent utilisateur conserve ou présente l’information générée ou reçue entre la mise en pause et la reprise de la présentation, puisque cela peut ne pas être techniquement possible et s’avérer trompeur dans beaucoup de situations.
+
+Note
+Une animation survenant dans une phase de pré-chargement ou dans une situation similaire peut être considérée comme essentielle si aucune interaction n’est permise à tous les utilisateurs durant cette phase et si l’absence d’indication de progression est susceptible de perturber les utilisateurs ou de leur faire croire que le contenu est figé ou défectueux.
+
+Critère de succès 2.2.3 Pas de délai d’exécution§
+Comprendre Pas de délai d’exécution (en anglais)|
+Comment satisfaire à Pas de délai d’exécution (en anglais)(Niveau AAA)
+Le temps n’est pas un facteur essentiel dans le déroulement de l’événement ou de l’activité, à l’exception des médias synchronisés non interactifs et des événements en temps réel.
+
+Critère de succès 2.2.4 Interruptions§
+Comprendre Interruptions (en anglais)|
+Comment satisfaire à Interruptions (en anglais)(Niveau AAA)
+Les interruptions peuvent être reportées ou supprimées par l’utilisateur, à l’exception des interruptions impliquant une urgence.
+
+Critère de succès 2.2.5 Nouvelle authentification§
+Comprendre Nouvelle authentification (en anglais)|
+Comment satisfaire à Nouvelle authentification (en anglais)(Niveau AAA)
+Quand une session authentifiée expire, l’utilisateur peut poursuivre son activité sans perte de données après une nouvelle authentification.
+
+Critère de succès 2.2.6 Délais d’expiration§
+Comprendre Délais d’expiration (en anglais)|
+Comment satisfaire à Délais d’expiration (en anglais)(Niveau AAA)
+Les utilisateurs sont avertis de la durée de leur inactivité qui pourrait entraîner une perte de données, à moins que les données ne soient conservées pendant plus de 20 heures lorsque l’utilisateur n’effectue aucune action.
+
+Note
+Les réglementations relatives à la protection de la vie privée peuvent exiger le consentement explicite de l’utilisateur avant qu’il ait été authentifié et avant que ses données soient conservées. Dans la plupart des juridictions, pays ou régions, le consentement explicite d’une personne mineure ne peut pas être sollicité. Lorsque la conservation des données est envisagée comme une méthode pour satisfaire à ce critère de succès, il est conseillé de consulter des professionnels de la protection de la vie privée et un conseiller juridique.
+
+Règle 2.3 Crises et réactions physiques§
+Ne pas concevoir de contenu susceptible de provoquer des crises ou des réactions physiques.
+
+Critère de succès 2.3.1 Pas plus de trois flashs ou sous le seuil critique§
+Comprendre Pas plus de trois flashs ou sous le seuil critique (en anglais)|
+Comment satisfaire à Pas plus de trois flashs ou sous le seuil critique (en anglais)(Niveau A)
+Une page Web doit être exempte de tout élément qui flashe plus de trois fois dans n’importe quel intervalle d’une seconde ou ce flash doit se situer sous le seuil de flash générique et le seuil de flash rouge.
+
+Note
+Puisque tout contenu ne satisfaisant pas à ce critère de succès peut interférer avec la capacité de l’utilisateur à exploiter la page entière, tout le contenu présent dans la page Web (qu’il soit utilisé pour satisfaire à d’autres critères de succès ou non) doit satisfaire à ce critère de succès. Voir l’exigence de conformité 5 : Non-interférence.
+
+Critère de succès 2.3.2 Trois flashs§
+Comprendre Trois flashs (en anglais)|
+Comment satisfaire à Trois flashs (en anglais)(Niveau AAA)
+Une page Web doit être exempte de tout élément qui flashe plus de trois fois dans n’importe quel intervalle d’une seconde.
+
+Critère de succès 2.3.3 Animation résultant d’interactions§
+Comprendre Animation résultant d’interactions (en anglais)|
+Comment satisfaire à Animation résultant d’interactions (en anglais)(Niveau AAA)
+L’animation basée sur le mouvement, déclenchée par une interaction, peut être désactivée sauf si l’animation est essentielle à la fonctionnalité ou à l’information transmise.
+
+Règle 2.4 Navigable§
+Fournir à l’utilisateur des éléments d’orientation pour naviguer, trouver le contenu et se situer dans le site.
+
+Critère de succès 2.4.1 Contourner des blocs§
+Comprendre Contourner des blocs (en anglais)|
+Comment satisfaire à Contourner des blocs (en anglais)(Niveau A)
+Un mécanisme permet de contourner les blocs de contenu qui sont répétés sur plusieurs pages Web.
+
+Critère de succès 2.4.2 Titre de page§
+Comprendre Titre de page (en anglais)|
+Comment satisfaire à Titre de page (en anglais)(Niveau A)
+Les pages Web présentent un titre qui décrit leur sujet ou leur but.
+
+Critère de succès 2.4.3 Parcours du focus§
+Comprendre Parcours du focus (en anglais)|
+Comment satisfaire à Parcours du focus (en anglais)(Niveau A)
+Si une page Web peut être parcourue de façon séquentielle et que les séquences de navigation affectent la signification ou l’action, les éléments reçoivent le focus dans un ordre qui préserve la signification et l’opérabilité.
+
+Critère de succès 2.4.4 Fonction du lien (selon le contexte)§
+Comprendre Fonction du lien (selon le contexte) (en anglais)|
+Comment satisfaire à Fonction du lien (selon le contexte) (en anglais)(Niveau A)
+La fonction de chaque lien est déterminée par le texte du lien seul ou par le texte du lien associé à un contexte du lien déterminé par un programme informatique, sauf si la fonction du lien est ambiguë pour tout utilisateur.
+
+Critère de succès 2.4.5 Accès multiples§
+Comprendre Accès multiples (en anglais)|
+Comment satisfaire à Accès multiples (en anglais)(Niveau AA)
+Une page Web peut être située par plus d’un moyen dans un ensemble de pages Web sauf si cette page est le résultat ou une étape d’un processus.
+
+Critère de succès 2.4.6 En-têtes et étiquettes§
+Comprendre En-têtes et étiquettes (en anglais)|
+Comment satisfaire à En-têtes et étiquettes (en anglais)(Niveau AA)
+Les en-têtes et les étiquettes décrivent le sujet ou le but.
+
+Critère de succès 2.4.7 Visibilité du focus§
+Comprendre Visibilité du focus (en anglais)|
+Comment satisfaire à Visibilité du focus (en anglais)(Niveau AA)
+Toute interface utilisable au clavier comporte un mode de fonctionnement où le focus est visible.
+
+Critère de succès 2.4.8 Localisation§
+Comprendre Localisation (en anglais)|
+Comment satisfaire à Localisation (en anglais)(Niveau AAA)
+L’utilisateur dispose d’informations pour se situer dans un ensemble de pages Web.
+
+Critère de succès 2.4.9 Fonction du lien (lien uniquement)§
+Comprendre Fonction du lien (lien uniquement) (en anglais)|
+Comment satisfaire à Fonction du lien (lien uniquement) (en anglais)(Niveau AAA)
+Un mécanisme permet de déterminer la fonction de chaque lien par le texte du lien uniquement, sauf si la fonction du lien est ambiguë pour tout utilisateur.
+
+Critère de succès 2.4.10 En-têtes de section§
+Comprendre En-têtes de section (en anglais)|
+Comment satisfaire à En-têtes de section (en anglais)(Niveau AAA)
+Les en-têtes de section sont utilisés pour organiser le contenu.
+
+Note
+« En-tête » est utilisé dans le sens général et comprend les titres et autres moyens de structurer les différents types de contenus.
+
+Note
+Ce critère de succès concerne les contenus de sections et non les composants d’interface utilisateur. Les composants d’interface utilisateur sont traités par le critère de succès 4.1.2.
+
+Règle 2.5 Modalités d’entrée§
+Faciliter l’utilisation des fonctionnalités par les utilisateurs au moyen de divers dispositifs d’entrées en plus du clavier.
+
+Critère de succès 2.5.1 Gestes pour le contrôle du pointeur§
+Comprendre Gestes pour le contrôle du pointeur (en anglais)|
+Comment satisfaire à Gestes pour le contrôle du pointeur (en anglais)(Niveau A)
+Toutes les fonctionnalités qui utilisent des gestes multipoints ou basés sur un tracé peuvent être utilisées avec un pointage à contact unique sans geste basé sur un tracé, à moins qu’un geste multipoint ou basé sur un tracé ne soit essentiel.
+
+Note
+Cette exigence s’applique aux contenus Web qui interprètent les actions du pointeur (elle ne s’applique donc pas aux actions nécessaires à l’utilisation d’un agent utilisateur ou d’une technologie d’assistance).
+
+Critère de succès 2.5.2 Annulation de l’action du pointeur§
+Comprendre Annulation de l’action du pointeur (en anglais)|
+Comment satisfaire à Annulation de l’action du pointeur (en anglais)(Niveau A)
+Pour une fonctionnalité qui peut être activée avec un dispositif de pointage à contact unique, au moins une des conditions suivantes est vraie :
+
+Aucun événement descendant
+l’événement descendant (down-event) du pointeur n’est pas utilisé pour exécuter une partie ou la totalité de la fonction ;
+Abandon ou annulation
+l’achèvement de la fonction se fait sur l’événement ascendant (up-event), et un mécanisme est disponible pour interrompre la fonction avant l’achèvement ou pour annuler la fonction après l’achèvement ;
+Inversion sur l’événement ascendant
+l’événement ascendant inverse tout résultat de l’événement descendant précédent ;
+Essentiel
+l’achèvement de la fonction lors de l’événement descendant est essentiel.
+Note
+Les fonctions qui émulent l’appui d’une touche du clavier ou du pavé numérique sont considérées comme essentielles.
+
+Note
+Cette exigence s’applique aux contenus Web qui interprètent les actions du pointeur (elle ne s’applique donc pas aux actions nécessaires à l’utilisation d’un agent utilisateur ou d’une technologie d’assistance).
+
+Critère de succès 2.5.3 Étiquette dans le nom§
+Comprendre Étiquette dans le nom (en anglais)|
+Comment satisfaire à Étiquette dans le nom (en anglais)(Niveau A)
+Pour les composants d’interface utilisateur dont les étiquettes contiennent du texte ou du texte sous forme d’image, le nom contient le texte qui est présenté visuellement.
+
+Note
+Une bonne pratique consiste à placer le texte de l’étiquette au début du nom.
+
+Critère de succès 2.5.4 Activation par le mouvement§
+Comprendre Activation par le mouvement (en anglais)|
+Comment satisfaire à Activation par le mouvement (en anglais)(Niveau A)
+Les fonctionnalités qui peuvent être activées par un mouvement de l’appareil ou un mouvement de l’utilisateur peuvent également être activées par des composants d’interface utilisateur et la réponse au mouvement peut être désactivée pour éviter une activation accidentelle, sauf dans les cas suivants :
+
+Interface compatible 
+le mouvement est utilisé pour activer la fonctionnalité par l’intermédiaire d’une interface compatible avec l’accessibilité ;
+Essentiel 
+le mouvement est essentiel à la fonction et le désactiver invaliderait l’activité.
+Critère de succès 2.5.5 Taille de la cible§
+Comprendre Taille de la cible (en anglais)|
+Comment satisfaire à Taille de la cible (en anglais)(Niveau AAA)
+La taille de la cible pour les pointeurs d’entrée est d’au moins 44 par 44 pixels CSS, sauf quand :
+
+Équivalente 
+la cible est disponible depuis un lien ou un contrôle équivalent sur la même page qui mesure au moins 44 par 44 pixels CSS ;
+En ligne 
+la cible se trouve dans une phrase ou un bloc de texte ;
+Contrôlée par l’agent utilisateur 
+la taille de la cible est déterminée par l’agent utilisateur et n’est pas modifiée par l’auteur ;
+Essentielle 
+une présentation spécifique de la cible est essentielle pour transmettre l’information.
+Critère de succès 2.5.6 Modalités d’entrées concurrentes§
+Comprendre Modalités d’entrées concurrentes (en anglais)|
+Comment satisfaire à Modalités d’entrées concurrentes (en anglais)(Niveau AAA)
+Le contenu Web ne restreint pas l’utilisation des modalités d’entrée disponibles sur une plateforme, sauf si la restriction est essentielle, nécessaire pour garantir la sécurité du contenu ou nécessaire pour respecter les paramètres de l’utilisateur.
+
+3. Compréhensible§
+Les informations et l’utilisation de l’interface utilisateur doivent être compréhensibles.
+
+Règle 3.1 Lisible§
+Rendre le contenu textuel lisible et compréhensible.
+
+Critère de succès 3.1.1 Langue de la page§
+Comprendre Langue de la page (en anglais)|
+Comment satisfaire à Langue de la page (en anglais)(Niveau A)
+La langue par défaut de chaque page Web peut être déterminée par un programme informatique.
+
+Critère de succès 3.1.2 Langue d’un passage§
+Comprendre Langue d’un passage (en anglais)|
+Comment satisfaire à Langue d’un passage (en anglais)(Niveau AA)
+La langue de chaque passage ou expression du contenu peut être déterminée par un programme informatique sauf pour un nom propre, pour un terme technique, pour un mot dont la langue est indéterminée ou pour un mot ou une expression faisant partie du langage courant de la langue utilisée dans le contexte immédiat.
+
+Critère de succès 3.1.3 Mots rares§
+Comprendre Mots rares (en anglais)|
+Comment satisfaire à Mots rares (en anglais)(Niveau AAA)
+Un mécanisme est disponible pour identifier la définition spécifique des mots ou expressions utilisés de manière inhabituelle ou de façon limitée, y compris les expressions idiomatiques et le jargon.
+
+Critère de succès 3.1.4 Abréviations§
+Comprendre Abréviations (en anglais)|
+Comment satisfaire à Abréviations (en anglais)(Niveau AAA)
+Un mécanisme est disponible pour identifier la forme complète ou la signification d’une abréviation.
+
+Critère de succès 3.1.5 Niveau de lecture§
+Comprendre Niveau de lecture (en anglais)|
+Comment satisfaire à Niveau de lecture (en anglais)(Niveau AAA)
+Lorsqu’un texte nécessite une capacité de lecture plus avancée que le premier cycle de l’enseignement secondaire après la suppression des noms propres et des titres, un contenu additionnel, ou une version qui ne requiert pas de capacité de lecture supérieure au premier cycle de l’enseignement secondaire est disponible.
+
+Critère de succès 3.1.6 Prononciation§
+Comprendre Prononciation (en anglais)|
+Comment satisfaire à Prononciation (en anglais)(Niveau AAA)
+Un mécanisme permet d’identifier la prononciation spécifique des mots dont la signification est ambiguë dans le contexte si leur prononciation n’est pas connue.
+
+Règle 3.2 Prévisible§
+Faire en sorte que les pages apparaissent et fonctionnent de manière prévisible.
+
+Critère de succès 3.2.1 Au focus§
+Comprendre Au focus (en anglais)|
+Comment satisfaire à Au focus (en anglais)(Niveau A)
+Quand un composant d’interface utilisateur reçoit le focus, il ne doit pas initier de changement de contexte.
+
+Critère de succès 3.2.2 À la saisie§
+Comprendre À la saisie (en anglais)|
+Comment satisfaire à À la saisie (en anglais)(Niveau A)
+Le changement de paramètre d’un composant d’interface utilisateur ne doit pas initier de changement de contexte à moins que l’utilisateur n’ait été avisé de ce comportement avant d’utiliser le composant.
+
+Critère de succès 3.2.3 Navigation cohérente§
+Comprendre Navigation cohérente (en anglais)|
+Comment satisfaire à Navigation cohérente (en anglais)(Niveau AA)
+Dans un ensemble de pages, les mécanismes de navigation qui se répètent sur plusieurs pages Web se présentent dans le même ordre relatif chaque fois qu’ils sont répétés, à moins qu’un changement soit initié par l’utilisateur.
+
+Critère de succès 3.2.4 Identification cohérente§
+Comprendre Identification cohérente (en anglais)|
+Comment satisfaire à Identification cohérente (en anglais)(Niveau AA)
+Dans un ensemble de pages Web les composants qui ont la même fonctionnalité sont identifiés de la même façon.
+
+Critère de succès 3.2.5 Changement à la demande§
+Comprendre Changement à la demande (en anglais)|
+Comment satisfaire à Changement à la demande (en anglais)(Niveau AAA)
+Un changement de contexte est initié uniquement sur demande de l’utilisateur ou un mécanisme est disponible pour désactiver un tel changement.
+
+Règle 3.3 Assistance à la saisie§
+Aider l’utilisateur à éviter et à corriger les erreurs de saisie.
+
+Critère de succès 3.3.1 Identification des erreurs§
+Comprendre Identification des erreurs (en anglais)|
+Comment satisfaire à Identification des erreurs (en anglais)(Niveau A)
+Si une erreur de saisie est détectée automatiquement, l’élément en erreur est identifié et l’erreur est décrite à l’utilisateur sous forme de texte.
+
+Critère de succès 3.3.2 Étiquettes ou instructions§
+Comprendre Étiquettes ou instructions (en anglais)|
+Comment satisfaire à Étiquettes ou instructions (en anglais)(Niveau A)
+Des étiquettes sont présentées ou des instructions sont fournies quand un contenu requiert une saisie utilisateur.
+
+Critère de succès 3.3.3 Suggestion après une erreur§
+Comprendre Suggestion après une erreur (en anglais)|
+Comment satisfaire à Suggestion après une erreur (en anglais)(Niveau AA)
+Si une erreur de saisie est automatiquement détectée et que des suggestions de corrections sont connues, ces suggestions sont alors proposées à l’utilisateur à moins que cela puisse compromettre la sécurité ou la finalité du contenu.
+
+Critère de succès 3.3.4 Prévention des erreurs (juridiques, financières, de données)§
+Comprendre Prévention des erreurs (juridiques, financières, de données) (en anglais)|
+Comment satisfaire à Prévention des erreurs (juridiques, financières, de données) (en anglais)(Niveau AA)
+Pour les pages Web qui entraînent des engagements juridiques ou des transactions financières de la part de l’utilisateur, qui modifient ou effacent des données contrôlables par l’utilisateur dans des systèmes de stockages de données, qui enregistrent les réponses de l’utilisateur à un test ou un examen, au moins l’une des conditions suivantes est vraie :
+
+Réversible
+les actions d’envoi sont réversibles.
+Vérifiée
+les données saisies par l’utilisateur sont vérifiées au niveau des erreurs de saisie et la possibilité est donnée à l’utilisateur de les corriger.
+Confirmée
+un mécanisme est disponible pour revoir, confirmer et corriger les informations avant leur soumission finale.
+Critère de succès 3.3.5 Aide§
+Comprendre Aide (en anglais)|
+Comment satisfaire à Aide (en anglais)(Niveau AAA)
+Une aide contextuelle est disponible.
+
+Critère de succès 3.3.6 Prévention des erreurs (toutes)§
+Comprendre Prévention des erreurs (toutes) (en anglais)|
+Comment satisfaire à Prévention des erreurs (toutes) (en anglais)(Niveau AAA)
+Pour des pages Web demandant à l’utilisateur de soumettre des informations, au moins l’une des conditions suivantes est vraie :
+
+Réversible
+les actions d’envoi sont réversibles.
+Vérifiée
+les données saisies par l’utilisateur sont vérifiées au niveau des erreurs de saisie et la possibilité est donnée à l’utilisateur de les corriger.
+Confirmée
+un mécanisme est disponible pour revoir, confirmer et corriger les informations avant leur soumission finale.
+4. Robuste§
+Le contenu doit être suffisamment robuste pour être interprété de manière fiable par une large variété d’agents utilisateurs, y compris les technologies d’assistance.
+
+Règle 4.1 Compatible§
+Optimiser la compatibilité avec les agents utilisateurs actuels et futurs, y compris les technologies d’assistance.
+
+Critère de succès 4.1.1 Analyse syntaxique§
+Comprendre Analyse syntaxique (en anglais)|
+Comment satisfaire à Analyse syntaxique (en anglais)(Niveau A)
+À moins que les spécifications ne le permettent, dans un contenu implémenté via un langage de balisage, les éléments ont des balises de début et de fin complètes, ils sont imbriqués conformément à leurs spécifications, ils ne contiennent pas d’attributs dupliqués et chaque ID est unique.
+
+Note
+Les balises de début et de fin auxquelles il manque un caractère critique, comme un chevron fermant ou un guillemet pour une valeur d’attribut, sont considérées incomplètes.
+
+Critère de succès 4.1.2 Nom, rôle et valeur§
+Comprendre Nom, rôle et valeur (en anglais)|
+Comment satisfaire à Nom, rôle et valeur (en anglais)(Niveau A)
+Pour tout composant d’interface utilisateur (comprenant mais n’étant pas limité aux éléments de formulaire, liens et composants générés par des scripts), le nom et le rôle peuvent être déterminés par un programme informatique ; les états, les propriétés et les valeurs qui peuvent être paramétrés par l’utilisateur peuvent être définis par programmation ; et la notification des changements de ces éléments est disponible aux agents utilisateurs, incluant les technologies d’assistance.
+
+Note
+Ce critère de succès s’adresse d’abord aux auteurs qui développent ou programment leurs propres composants d’interface utilisateur. Toutefois, les contrôles HTML standards se conforment déjà à ce critère de succès lorsqu’ils sont utilisés conformément à la spécification.
+
+Critère de succès 4.1.3 Messages d’état§
+Comprendre Messages d’état (en anglais)|
+Comment satisfaire à Messages d’état (en anglais)(Niveau AA)
+Dans un contenu implémenté via un langage de balisage, les messages d’état peuvent être déterminés par un programme informatique grâce à un rôle ou des propriétés afin qu’ils puissent être présentés à l’utilisateur par des technologies d’assistance sans recevoir le focus.
+
+5. Conformité§
+Cette section reprend les exigences de conformité aux WCAG 2.1. Elle explique aussi comment faire une déclaration de conformité, ce qui est optionnel. Finalement, elle décrit la signification du terme compatible avec l’accessibilité puisque la conformité ne peut dépendre que des technologies qui sont utilisées de manière compatible avec l’accessibilité. Le document Comprendre la conformité (en anglais) comprend des explications plus précises sur la notion de compatibilité avec l’accessibilité.
+
+5.1 Interprétation des exigences normatives§
+Le contenu principal des WCAG 2.1 est normatif et définit les exigences qui ont un impact sur les déclarations de conformité. Les éléments introductifs, les annexes, les sections marquées comme « non normatives », les diagrammes, les exemples et les notes sont informatifs (non normatifs). Les éléments non normatifs fournissent des conseils pour aider à interpréter les règles, mais ne constituent pas des exigences ayant un impact sur une déclaration de conformité.
+
+Les mots clés PEUT (MAY), DOIT (MUST), NE DOIT PAS (MUST NOT), NON RECOMMANDÉ (NOT RECOMMENDED), RECOMMANDÉ (RECOMMENDED), DEVRAIT (SHOULD), et NE DEVRAIT PAS (SHOULD NOT) doivent être interprétés comme décrit dans [RFC2119].
+
+5.2 Les exigences de conformité§
+Afin qu’une page Web soit conforme aux WCAG 2.1, toutes les exigences suivantes doivent être satisfaites :
+
+5.2.1 Niveau de conformité§
+L’un des niveaux de conformité suivants est atteint par le respect de la totalité de ses critères de succès.
+
+Pour une conformité de niveau A (le niveau minimal de conformité), la page Web satisfait à tous les critères de succès de niveau A ou une version de remplacement conforme est fournie.
+Pour une conformité de niveau AA, la page Web remplit tous les critères de succès de niveau A et AA ou une version de remplacement conforme au niveau AA est fournie.
+Pour une conformité de niveau AAA, la page Web remplit tous les critères de succès de niveau A, AA et AAA ou une version de remplacement conforme au niveau AAA est fournie.
+Note
+Bien que la conformité se définisse par paliers, les auteurs sont invités à mentionner (dans leur déclaration) tous les critères de succès satisfaits au-delà du niveau de conformité atteint.
+
+Note
+Il n’est pas recommandé de se fixer le niveau AAA comme objectif à l’échelle de sites entiers car il n’est pas possible de satisfaire à tous les critères de succès du niveau AAA pour certains contenus.
+
+5.2.2 Pages complètes§
+La conformité (et le niveau de conformité) s’entend uniquement pour des pages Web complètes et ne peut être atteinte si une partie de la page Web est exclue.
+
+Note
+Dans le but de déterminer la conformité, les versions de remplacement à une partie du contenu de la page sont considérées comme une partie de la page quand les versions de remplacement peuvent être obtenues directement depuis la page, comme par exemple, une description longue ou la présentation de remplacement d’une vidéo.
+
+Note
+Les auteurs de pages Web qui ne peuvent être considérées comme conformes en raison d’un contenu qui n’est pas sous le contrôle de l’auteur peuvent envisager d’utiliser une déclaration de conformité partielle.
+
+Note
+Une page complète comprend toutes les variations de cette page automatiquement présentées dans les différentes tailles d’écran (par exemple, les variations dans une page Web responsive). Chacune de ces variations doit être conforme (ou doit avoir une version alternative conforme) pour que la page complète soit conforme.
+
+5.2.3 Processus complets§
+Quand une page Web fait partie d’un ensemble représentant un processus (comme une succession d’étapes devant être complétées afin d’accomplir une activité), toutes les pages Web du processus sont conformes au moins au niveau spécifié. (La conformité à un certain niveau est impossible s’il existe une page de ce processus qui n’atteint pas au moins ce niveau.)
+
+Une boutique en ligne présente une série de pages permettant de sélectionner et d’acheter des produits. Toutes les pages de la séquence depuis le début jusqu’à la fin (le paiement) sont conformes afin que toute page faisant partie du processus soit conforme.
+
+5.2.4 L’usage des technologies selon des méthodes exclusivement compatibles avec l’accessibilité§
+La satisfaction à un critère de succès ne dépend que des méthodes d’utilisation des technologies qui sont compatibles avec l’accessibilité. Toute information ou fonctionnalité proposée d’une manière non compatible avec l’accessibilité est également disponible sous une forme compatible avec l’accessibilité. Voir Comprendre la compatibilité avec l’accessibilité (en anglais).
+
+5.2.5 Non-interférence§
+Si des technologies sont employées de manière non compatible avec l’accessibilité ou non conforme, alors elles n’empêchent pas les utilisateurs d’accéder au reste de la page. En outre, la page Web dans sa globalité continue de répondre aux exigences de conformité dans chacun des cas suivants :
+
+quand toute technologie non dépendante est activée dans l’agent utilisateur,
+quand toute technologie non dépendante est désactivée dans l’agent utilisateur et
+quand toute technologie non dépendante n’est pas reconnue par l’agent utilisateur.
+De plus, les critères de succès suivants s’appliquent à tout le contenu de la page, y compris au contenu dont on ne dépend pas autrement pour atteindre la conformité, car un échec à les satisfaire pourrait perturber toute utilisation de la page :
+
+1.4.2 — Contrôle du son,
+2.1.2 — Pas de piège au clavier,
+2.3.1 — Pas plus de trois flashs ou sous le seuil critique, et
+2.2.2 — Mettre en pause, arrêter, masquer.
+Note
+Si une page ne peut pas être rendue conforme (par exemple une page de test de la conformité ou une page d’exemple), elle ne peut pas être incluse dans le périmètre de conformité ou dans une déclaration de conformité.
+
+Pour plus d’information et des exemples, voir Comprendre les exigences de conformité (en anglais).
+
+5.3 Déclarations de conformité (optionnelle)§
+La conformité est définie seulement pour les pages Web. Toutefois, une déclaration de conformité peut être faite pour une seule page, une série de pages ou un ensemble de pages Web reliées entre elles.
+
+5.3.1 Éléments requis pour une déclaration de conformité§
+Une déclaration de conformité n’est pas obligatoire. Les auteurs peuvent se conformer aux WCAG 2.1 sans faire aucune déclaration. Toutefois, si une déclaration de conformité est faite, cette déclaration de conformité doit inclure les informations suivantes :
+
+Date de la déclaration
+Titre des Règles, version et URI « Règles pour l’accessibilité des contenus Web 2.1 à https://www.w3.org/TR/WCAG21/ »
+Niveau de conformité satisfait : (Niveau A, AA ou AAA)
+Une brève description des pages Web, comme une liste d’URI pour lesquelles la déclaration est faite en précisant si les sous-domaines sont inclus dans la déclaration.
+
+Note
+Les pages Web peuvent être décrites sous forme de liste ou par une expression qui décrit tous les URI inclus dans la déclaration.
+
+Note
+Les produits Web qui ne comportent pas d’URI avant leur installation sur le site Web du client peuvent comporter un engagement à l’effet que le produit sera conforme une fois installé.
+
+Une liste des technologies Web dont dépend l’utilisation du contenu.
+Note
+Si un logo de conformité est utilisé, il devrait constituer une déclaration et doit donc être accompagné des éléments requis pour une déclaration de conformité tel qu’énumérés ci-dessus.
+
+5.3.2 Éléments optionnels d’une déclaration de conformité§
+En plus des éléments ci-dessus qui sont requis pour une déclaration de conformité, considérer la possibilité d’ajouter des informations pour aider les utilisateurs. Les informations supplémentaires recommandées comprennent :
+
+Une liste des critères de succès qui vont au-delà du niveau de conformité atteint. Cette information devrait être donnée d’une façon que les utilisateurs pourront utiliser, de préférence sous la forme de métadonnées lisibles par machine.
+Une liste des technologies qui « sont utilisées mais dont l’utilisation du contenu ne dépend pas ».
+Une liste des agents utilisateurs, incluant les technologies d’assistance qui ont été utilisées pour vérifier le contenu.
+Une liste des caractéristiques d’accessibilité spécifiques du contenu, fournies par des métadonnées lisibles par machine.
+De l’information à propos des dispositions prises pour aller au-delà des critères de succès dans le but d’améliorer l’accessibilité.
+Une version lisible par machine d’une métadonnée sur les technologies spécifiques dont dépend l’utilisation du contenu.
+Une version lisible par machine de la déclaration de conformité.
+Note
+Lire Comprendre la déclaration de conformité (en anglais) pour plus d’information et pour des exemples de déclarations de conformité.
+
+Note
+Lire Comprendre les métadonnées (en anglais) pour plus d’informations à propos de l’utilisation des métadonnées dans une déclaration de conformité.
+
+5.4 Déclaration de conformité partielle — Contenu fourni par un tiers§
+Parfois, des pages Web sont créées afin que l’on puisse y rajouter un contenu. Par exemple, une application Web de courrier électronique, un blogue, un article permettant l’ajout de commentaires par les utilisateurs ou des applications acceptant du contenu généré par l’utilisateur. Un autre exemple serait une page, telle que celles d’un portail ou d’un site d’informations, composées d’une somme de contenus rédigés par de multiples contributeurs ou des sites insérant automatiquement, au fur et à mesure, du contenu provenant d’autres sites, tels que des publicités insérées automatiquement.
+
+Dans ces cas-là, il est impossible lors de l’affichage original de savoir quel sera le contenu non contrôlé de ces pages. Il est important de remarquer que le contenu non contrôlé peut également affecter l’accessibilité du contenu contrôlé. Deux options sont envisageables :
+
+La détermination de conformité peut être basée sur la connaissance de l’existant. Si une page de ce type est vérifiée et réparée (le contenu non conforme est enlevé ou mis en conformité) en moins de deux jours ouvrables, alors une détermination ou affirmation de la conformité peut être faite puisque, excepté les erreurs dans le contenu généré en externe qui sont corrigées ou enlevées lorsqu’elles sont découvertes, la page est conforme. Aucune affirmation de conformité ne peut être faite s’il est impossible de vérifier ou de réparer le contenu non conforme ;
+
+OU
+
+Une « déclaration de conformité partielle » peut être faite comme quoi la page n’est pas conforme, mais qu’elle pourrait l’être si certaines parties étaient enlevées. La forme de cette déclaration pourrait être : « Cette page n’est pas conforme, mais pourrait être conforme aux WCAG 2.1 niveau X si les parties suivantes, issues de sources non contrôlées, lui étaient retirées ». De plus, ce qui suit pourrait également être reconnu comme un contenu non contrôlé comme décrit dans la déclaration de conformité partielle :
+
+C’est du contenu qui n’est pas contrôlé par l’auteur.
+C’est du contenu décrit de façon à être identifié par les utilisateurs (par exemple, on ne peut pas les décrire comme « toutes les parties que nous ne contrôlons pas » à moins qu’elles ne soient clairement marquées comme telles).
+5.5 Déclaration de conformité partielle — Langue§
+Une « déclaration de conformité partielle selon la langue » peut être faite lorsqu’une page n’est pas conforme et pourrait l’être si la compatibilité avec l’accessibilité était assurée pour toutes les langues utilisées dans la page. La déclaration s’énonce alors comme suit : « Cette page n’est pas conforme, mais serait conforme aux WCAG 2.1 au niveau X si la compatibilité avec l’accessibilité était assurée pour la (les) langue(s) suivante(s) : »
+
+6. Glossaire§
+abréviation
+forme abrégée d’un mot, d’une expression ou d’un nom lorsque l’abréviation ne fait pas encore partie de la langue courante
+
+Note
+Ceci comprend les sigles et les acronymes formés à partir des initiales des mots où :
+
+les sigles sont une forme abrégée d’un nom ou d’une expression constituée des lettres initiales des mots ou des syllabes contenues dans ce nom ou cette expression.
+
+Note
+Ne sont pas définies dans toutes les langues.
+
+SNCF est le sigle de la Société nationale des chemins de fer français.
+
+ESP est le sigle, en anglais, de extrasensory perception, la perception extrasensorielle.
+
+les acronymes sont des abréviations formées à partir des premières lettres ou des parties d’autres mots (dans un nom ou une expression) et qui peuvent être prononcés comme un mot.
+
+ONU est un acronyme constitué des premières lettres de Organisation des Nations unies.
+
+Note
+Quelques sociétés ont adopté ce qui constituait un sigle ou un acronyme comme nom de leur société. Dans un tel cas, le nouveau nom de la société est constitué des lettres (par exemple, Ecma) et le mot n’est plus alors considéré comme une abréviation.
+
+agent utilisateur
+tout logiciel qui récupère et présente le contenu Web aux utilisateurs
+
+Les navigateurs Web, les lecteurs de média, les modules d’extensions et les autres programmes — dont les technologies d’assistance — qui aident à récupérer, restituer et interagir avec le contenu Web.
+
+(texte) agrandi
+avec au minimum 18 points ou 14 points gras ou une taille de caractère équivalente pour les polices chinoises, japonaises ou coréennes (CJK)
+
+Note
+Les polices avec des traits extraordinairement fins ou des aspects et des caractéristiques inhabituels qui réduisent la reconnaissance de la forme des lettres sont plus difficiles à lire, spécialement à des niveaux de contrastes bas.
+
+Note
+La taille de caractère est la taille lorsque le contenu est affiché. Cela n’inclut pas le redimensionnement qui pourrait être fait par l’utilisateur.
+
+Note
+La taille réelle des caractères qu’un utilisateur voit est dépendante à la fois de la définition de la taille faite par l’auteur, du périphérique de restitution de l’utilisateur ou du paramétrage de l’agent utilisateur. Pour la majorité des polices de corps de texte, 14 et 18 points est sensiblement équivalent à 1,2 et 1,5 em ou à 120% et 150% de la taille par défaut du corps de texte (en considérant que la police de corps est à 100%), mais les auteurs seraient tenus de vérifier cela pour les polices particulières qui seraient utilisées. Quand les polices sont définies en unités relatives, la taille réelle du point est mesurée par l’agent utilisateur pour l’affichage. La taille d’un point doit être obtenue auprès de l’agent utilisateur ou calculée sur la même base de mesure que celle de l’agent utilisateur, lors de l’évaluation de ce critère de succès. Les utilisateurs qui ont une basse vision auront à choisir les paramètres appropriés.
+
+Note
+Lors de l’utilisation de texte sans spécification de taille de caractère, la taille la plus petite utilisée dans les principaux navigateurs pour le texte dont la taille n’est pas spécifiée serait considérée comme une taille raisonnable pour la police. Si un titre de niveau 1 est restitué en 14pt gras ou plus sur les principaux navigateurs, alors il est raisonnable de considérer qu’il s’agit de texte agrandi. Le redimensionnement relatif peut être calculé de manière identique à partir de la taille par défaut.
+
+Note
+La taille 18 ou 14 points pour les textes en alphabet latin est définie à partir de la taille minimum pour les grands caractères (14pt) et de la taille standard plus grande (18pt). Pour les autres polices telles que les langues CJK, les tailles « équivalentes » seraient la taille de grand caractère minimum utilisée pour ces langues et la taille de grands caractères plus grande suivante.
+
+aide contextuelle
+texte d’aide qui fournit des informations relatives à la fonction actuellement utilisée
+
+Note
+Des étiquettes claires peuvent jouer le rôle d’aide contextuelle.
+
+ambigu pour tout utilisateur
+l’intention ne peut être déterminée à partir du lien et de toute l’information de la page Web présentée à l’utilisateur en même temps que ce lien (c’est-à-dire qu’un lecteur sans limitations fonctionnelles ne connaîtrait pas la fonction d’un lien avant de l’activer)
+
+Le mot goyave dans la phrase suivante utilisé comme lien : « L’une des exportations importantes est la goyave ». Ce lien pourrait conduire à une définition de la goyave, à un graphe présentant une liste des quantités de goyave exportées ou à une photo de gens récoltant la goyave. Jusqu’à ce que le lien soit activé, tout utilisateur est dans l’incertitude et une personne handicapée n’est donc pas désavantagée.
+
+animation basée sur le mouvement
+ajout d’étapes entre des états pour créer l’illusion de mouvement ou pour donner l’impression d’une transition fluide
+
+Par exemple, un élément qui se déplace ou change de taille lors de son apparition est considéré comme animé. Un élément qui apparaît instantanément sans transition n’est pas considéré comme animé. L’animation basée sur le mouvement ne comprend pas les changements de couleur, d’effet de flou ou d’opacité.
+
+art ASCII
+dessin créé par une disposition spatiale de caractères ou glyphes (habituellement à partir des 95 caractères imprimables définis en ASCII)
+
+audio
+la technologie de reproduction des sons
+
+Note
+Le son peut être créé de façon synthétique (y compris la synthèse vocale), être enregistré à partir de sons réels ou les deux.
+
+audio-description
+narration ajoutée à une piste sonore pour décrire les détails visuels importants qui ne peuvent être compris à partir de la piste sonore principale seulement
+
+Note
+L’audio-description d’une vidéo fournit de l’information à propos des actions, des personnages, des changements de scènes, du texte apparaissant à l’écran et d’autres contenus visuels.
+
+Note
+Dans une audio-description standard, la narration est ajoutée durant les pauses qui existent dans le dialogue. (Voir aussi audio-description étendue.)
+
+Note
+Lorsque toute l’information de la vidéo est déjà donnée dans la piste audio, aucune audio-description supplémentaire n’est requise.
+
+Note
+Aussi nommée « vidéo-description » et « narration descriptive ».
+
+audio-description étendue
+audio-description ajoutée à une présentation audiovisuelle en mettant en pause la vidéo de manière à avoir le temps d’ajouter des descriptions supplémentaires
+
+Note
+cette technique est à utiliser seulement si le sens de la vidéo est perdu sans audio-description supplémentaire et que les pauses entre les dialogues ou la narration sont trop courtes.
+
+blocs de texte
+plus d’une phrase de texte
+
+CAPTCHA
+sigle de « Completely Automated Public Turing test to tell Computers and Humans Apart » (test public de Turing entièrement automatique ayant pour but de distinguer les humains des ordinateurs)
+
+Note
+Les tests de type CAPTCHA demandent souvent à l’utilisateur de taper un texte présenté dans une image ou un extrait audio déformés.
+
+Note
+Un test de Turing est tout système de tests conçu pour distinguer un humain d’un ordinateur. Il est nommé en l’honneur du célèbre informaticien Alan Turing. Ce terme a été popularisé par les chercheurs de l’Université Carnegie Mellon.
+
+changements de contexte
+changements majeurs dans le contenu d’une page Web qui, s’ils sont faits sans que l’utilisateur en soit conscient, peuvent désorienter l’utilisateur qui ne peut voir l’ensemble de la page en même temps
+
+Les changements de contexte comprennent les changements de :
+
+agent utilisateur ;
+espace de restitution ;
+focus ;
+contenu qui modifie la signification de la page Web.
+Note
+Un changement de contenu n’est pas toujours un changement de contexte. Un changement dans le contenu comme le déploiement d’une arborescence, un menu dynamique ou un déplacement de tabulation ne change pas nécessairement le contexte à moins qu’il ne change aussi l’un des éléments énumérés ci-dessus (par exemple le focus).
+
+L’ouverture d’une nouvelle fenêtre, le déplacement du focus sur un composant différent, le déplacement vers une nouvelle page (y compris tout ce qui, pour l’utilisateur, aurait l’air d’un déplacement vers une autre page) ou la réorganisation significative du contenu d’une page sont autant d’exemples d’un changement de contexte.
+
+cible
+zone du dispositif d’affichage qui reçoit l’action d’un pointeur, telle que la zone interactive d’un composant d’interface utilisateur
+
+Note
+Si deux cibles tactiles ou plus se chevauchent, la zone de chevauchement ne devrait pas être incluse dans la mesure de la taille de la cible, sauf si les cibles qui se chevauchent exécutent la même action ou ouvrent la même page.
+
+clignotement
+alternance entre deux états visuels d’une façon qui veut attirer l’attention
+
+Note
+Voir aussi flash. Il est possible que quelque chose soit suffisamment gros et clignote de façon suffisamment lumineuse à la fréquence appropriée pour être aussi considéré comme un flash.
+
+compatible avec l’accessibilité
+compatible avec les technologies d’assistance des utilisateurs ainsi qu’avec les fonctions d’accessibilité des navigateurs et des autres agents utilisateurs
+
+Pour que l’utilisation d’une technologie Web (ou d’une fonctionnalité d’une technologie) soit considérée comme compatible avec l’accessibilité, les conditions 1 et 2 doivent toutes deux être respectées pour une technologie Web (ou pour une fonctionnalité d’une technologie) :
+
+La façon dont la technologie Web est utilisée doit être compatible avec les technologies d’assistance des utilisateurs. Cela signifie que la façon dont la technologie est utilisée a été testée dans une perspective d’interopérabilité avec des utilisateurs des technologies d’assistance dans la ou les langues du contenu ;
+
+ET
+
+La technologie Web doit fonctionner avec des agents utilisateurs qui sont compatibles avec l’accessibilité et qui sont à la disposition des utilisateurs. Cela signifie qu’au moins une des quatre affirmations suivantes est vraie :
+
+La technologie fonctionne de façon native dans des agents utilisateurs largement distribués qui sont eux-mêmes compatibles avec l’accessibilité (comme HTML et CSS) ;
+
+OU
+
+La technologie fonctionne avec un module d’extension largement distribué et qui est lui-même compatible avec l’accessibilité ;
+
+OU
+
+Le contenu est disponible dans un environnement fermé comme le réseau d’une université ou d’une entreprise où l’agent utilisateur requis par la technologie et utilisé par l’organisation est lui-même compatible avec l’accessibilité ;
+
+OU
+
+Les agents utilisateurs avec lesquels fonctionne la technologie sont compatibles avec l’accessibilité et sont disponibles en téléchargement ou à l’achat d’une façon qui :
+
+ne coûte pas plus cher à une personne handicapée qu’à une personne sans limitations fonctionnelles et
+est aussi facile à trouver et à obtenir par une personne handicapée qu’elle l’est pour une personne sans limitations fonctionnelles.
+Note
+Le groupe de travail sur les règles d’accessibilité (AG WG) et le W3C ne précisent pas quel niveau de compatibilité avec les technologies d’assistance une technologie Web particulière doit avoir pour être considérée comme compatible avec l’accessibilité. Voir le niveau de compatibilité avec les technologies d’assistance nécessaire à la « compatibilité avec l’accessibilité » (en anglais).
+
+Note
+Les technologies Web peuvent être utilisées d’une manière qui n’est pas compatible avec l’accessibilité tant que l’utilisation du contenu n’en dépend pas et que la page dans son ensemble satisfait aux exigences de conformité, incluant l’exigence de conformité 4 et l’exigence de conformité 5.
+
+Note
+Quand une technologie Web est utilisée d’une manière qui est « compatible avec l’accessibilité », cela n’implique pas que toute la technologie ou que tous les usages de cette technologie sont compatibles. La plupart des technologies, y compris HTML, comportent une fonction ou un usage qui n’est pas compatible. Les pages sont conformes aux WCAG seulement si les usages de la technologie qui sont compatibles avec l’accessibilité sont les seuls dont dépend l’utilisation du contenu et que ces usages permettent de satisfaire aux exigences des WCAG.
+
+Note
+Lorsqu’une technologie Web est citée et qu’elle se présente en plusieurs versions, la ou les versions compatibles devraient être spécifiées.
+
+Note
+Pour les auteurs, une façon de repérer les usages d’une technologie qui sont compatibles avec l’accessibilité consisterait à consulter la compilation des usages qui sont documentés comme compatibles avec l’accessibilité. Voir Comprendre les usages des technologies compatibles avec l’accessibilité (en anglais). Les auteurs, les sociétés, les vendeurs de technologies ou n’importe qui d’autre peuvent documenter les usages des technologies qui sont compatibles avec l’accessibilité. Toutefois, tous les usages des technologies documentés devraient satisfaire à la définition des technologies Web compatibles avec l’accessibilité telle qu’elle est énoncée ci-dessus.
+
+composant d’interface utilisateur
+partie du contenu qui est perçue par les utilisateurs comme un élément de contrôle unique pour une fonction distincte
+
+Note
+Plusieurs composants d’interface utilisateur peuvent être implémentés au sein d’un seul programme. La notion de composant n’est pas liée ici aux techniques de programmation, mais plutôt à ce que les utilisateurs perçoivent comme des éléments de contrôle distincts.
+
+Note
+Les composants d’interface utilisateur incluent les éléments de formulaire et les liens aussi bien que des composants générés par scripts.
+
+Note
+Les termes « composant » ou « composant d’interface utilisateur » sont aussi parfois désignés par « élément d’interface utilisateur ».
+
+Un microprogramme (applet) dispose d’un « élément de contrôle » permettant de se déplacer dans le contenu ligne par ligne, page par page ou au hasard. Puisque chacune de ces fonctions devrait avoir un nom et fonctionner indépendamment, elles constitueraient chacune un « composant d’interface utilisateur ».
+
+conformité
+satisfaire à toutes les exigences d’une norme ou d’un standard donné, d’une règle ou d’une spécification
+
+contenu additionnel
+contenu supplémentaire illustrant ou clarifiant le contenu primaire
+
+La version audio d’une page Web.
+
+L’illustration d’un processus complexe.
+
+Un paragraphe résumant les principales conclusions et recommandations d’un rapport de recherche.
+
+contenu non textuel
+tout contenu qui n’est pas une suite de caractères déterminée par un programme informatique ou suite de caractères sans signification dans aucune langue
+
+Note
+Ceci inclut l’art ASCII (qui est un dessin à base de caractères), les émoticônes, l’écriture « leetspeak » (qui utilise la substitution de caractères) et les images représentant du texte.
+
+contenu Web
+information et expérience sensorielle à communiquer à l’utilisateur au moyen d’un agent utilisateur, y compris le code ou le balisage qui définit la structure, la présentation et les interactions du contenu
+
+contexte du lien déterminé par un programme informatique
+information supplémentaire qui peut être déterminée par un programme informatique à partir des relations avec un lien, combinée avec le texte du lien et présentée aux utilisateurs sous différentes formes
+
+En HTML, l’information qui est déterminée par un programme informatique à partir d’un lien en français, y compris le texte qui est dans le même paragraphe, la même liste ou la même cellule de tableau que le lien, ou une cellule d’en-tête de tableau associée avec la cellule contenant le lien.
+
+Note
+Puisque les lecteurs d’écran interprètent la ponctuation, ils peuvent aussi fournir le contexte de la phrase en cours, lorsque le focus est sur le lien contenu dans cette phrase.
+
+contrôlable par l’utilisateur
+données auxquelles les utilisateurs ont accès
+
+Note
+Ceci ne concerne pas les journaux de connexions (logs) Internet et les données de supervision des moteurs de recherche.
+
+Les champs nom et adresse d’un compte utilisateur.
+
+dans une fenêtre plein écran
+sur les écrans d’ordinateur de bureau ou portable de taille courante dont l’espace de restitution est maximisé
+
+Note
+Du fait que les gens gardent leurs ordinateurs pendant plusieurs années, il est conseillé de ne pas se baser sur les dernières résolutions d’écrans des ordinateurs de bureau ou portable, mais de prendre en considération la plus représentative des résolutions d’écrans durant une période de plusieurs années précédant cette évaluation.
+
+défini par programmation
+défini par un logiciel utilisant des méthodes qui fonctionnent avec les agents utilisateurs, y compris les technologies d’assistance
+
+dépendre (technologies)
+le contenu ne serait pas conforme si cette technologie est inactivée ou si elle n’est pas compatible
+
+déterminé (déterminable) par un programme informatique
+déterminé par un programme à partir de données fournies par l’auteur d’une manière qui permet aux agents utilisateurs, y compris les technologies d’assistance, d’extraire et de présenter cette information aux utilisateurs sous différentes formes
+
+Note
+Déterminé dans un langage de balisage à partir d’éléments et d’attributs auxquels on accède grâce aux technologies d’assistance couramment disponibles.
+
+Note
+Déterminé grâce à des structures de données spécifiques d’une technologie pour un langage non-balisé et exposée aux technologies d’assistance via une API d’accessibilité aux technologies d’assistance couramment disponibles.
+
+en direct
+information captée depuis un événement du monde réel et transmise à un récepteur sans autre délai que celui de la diffusion
+
+Note
+Le délai de diffusion est un court délai souvent automatisé, utilisé par exemple pour permettre aux diffuseurs de mettre en liste d’attente ou de censurer le flux sonore (ou vidéo), mais insuffisant pour permettre un montage significatif.
+
+Note
+Si l’information est totalement générée par ordinateur il ne s’agit pas d’information en direct.
+
+engagements juridiques
+transactions par lesquelles la personne contracte une obligation ou reçoit un bénéfice de nature juridique
+
+Un contrat de mariage, un échange d’actions (financier et juridique), un legs, un prêt, une adoption, un enrôlement dans l’armée, un contrat de tout type, etc.
+
+enseignement primaire
+période de six ans qui commence entre l’âge de 5 et 7 ans, sans forcément d’antécédents d’éducation
+
+Note
+Cette définition se fonde sur la norme de Classification internationale type de l’éducation de l’[UNESCO].
+
+ensemble de pages Web
+groupe de pages Web partageant un objectif commun et créées par le même auteur, groupe ou organisation
+
+Cela inclut, par exemple une publication répartie sur plusieurs pages Web, dans laquelle chaque page contient un chapitre ou une autre section importante de l’ouvrage. La publication constitue une seule unité logique, contiguë et contient des éléments de navigation qui permettent d’accéder à l’ensemble des pages.
+
+Note
+Différentes versions linguistiques seraient considérées comme des ensembles de pages Web distincts.
+
+équivalent textuel
+texte associé par programmation à un contenu non textuel ou dont il est fait mention depuis un texte associé par programmation à un contenu non textuel. Un texte associé par programmation est un texte dont l’emplacement peut être déterminé par programmation depuis le contenu non textuel.
+
+L’image d’un graphique est décrite textuellement dans le paragraphe suivant le graphique. Le bref équivalent textuel du graphique indique que la description suit celui-ci.
+
+Note
+Se référer à Comprendre les équivalents textuels (en anglais) pour plus d’informations.
+
+erreur de saisie
+information fournie par l’utilisateur qui n’est pas acceptée
+
+Note
+Cela inclut :
+
+L’information qui est demandée par la page Web mais oubliée par l’utilisateur.
+L’information qui est fournie par l’utilisateur mais qui ne correspond pas au format ou aux valeurs des données attendus.
+espace de restitution
+objet au sein duquel l’agent utilisateur présente du contenu
+
+Note
+L’agent utilisateur présente le contenu au travers d’un ou plusieurs espaces de restitution. Les espaces de restitution peuvent être des fenêtres, des cadres, des haut-parleurs et des loupes virtuelles. Un espace de restitution peut contenir lui-même un autre espace de restitution (par exemple, des cadres imbriqués). Les composants d’interface créés par l’agent utilisateur, tels que des invites de commandes, des menus et des alertes ne sont pas des espaces de restitution.
+
+Note
+Cette définition est fondée sur le Glossaire des règles pour l’accessibilité des agents utilisateurs 1.0 (en anglais) [UAAG10].
+
+essentiel (essentielle)
+élément qui changerait fondamentalement les informations ou les fonctionnalités du contenu s’il était supprimé et informations et fonctionnalités qui ne pourraient être restituées autrement d’une manière conforme
+
+état
+propriété dynamique représentant les caractéristiques d’un composant d’interface utilisateur qui peut changer en réponse à une action de l’utilisateur ou à des processus automatisés
+
+Les états n’affectent pas la nature du composant, mais représentent des données associées au composant ou aux possibilités d’interaction par l’utilisateur. Il s’agit par exemple des états focus, survolé, sélectionné, pressé, coché, visité/non visité, et développé/réduit.
+
+étiquette
+texte ou autre composant avec un équivalent textuel qui est restitué à l’utilisateur pour permettre d’identifier un composant dans un contenu Web.
+
+Note
+Une étiquette est présentée à tous les utilisateurs alors que le nom peut être masqué et seulement restitué par une technologie d’assistance. Dans de nombreux cas (mais pas tous) le nom et l’étiquette sont identiques.
+
+Note
+Le terme étiquette n’est pas limité à l’élément label en HTML.
+
+événement ascendant (up-event)
+événement de la plateforme qui se produit lorsque le mécanisme de déclenchement d’un pointeur est relâché
+
+L’événement ascendant peut avoir des noms différents selon les plateformes, comme « touchend » ou « mouseup ».
+
+événement descendant (down-event)
+événement de la plateforme qui se produit lorsque le mécanisme de déclenchement d’un pointeur est enfoncé
+
+L’événement descendant peut avoir des noms différents selon les plateformes, comme « touchstart » ou « mousedown ».
+
+événement en temps réel
+événement qui a) se produit en même temps que la visualisation et b) n’est pas entièrement généré par le contenu
+
+Une diffusion Web d’une représentation en direct (qui se produit en même temps que la visualisation et qui n’est pas pré-enregistrée).
+
+Des enchères en ligne avec des gens qui enchérissent (avec une visualisation en direct).
+
+Des humains interagissant dans un monde virtuel grâce à des avatars (qui ne sont pas entièrement générés par le contenu et qui se produisent en même temps que la visualisation).
+
+expérience sensorielle spécifique
+une expérience sensorielle qui n’est pas purement décorative et dont l’objectif premier n’est pas de transmettre une information importante ou d’accomplir une fonction
+
+On compte parmi les exemples un morceau de flûte solo, des œuvres d’art visuel, etc.
+
+expression idiomatique
+phrase dont le sens ne peut être déduit du sens des mots qui la composent et dont les mots spécifiques ne peuvent être changés sans en perdre le sens
+
+Note
+Les expressions idiomatiques ne peuvent être traduites littéralement sans perdre leur sens (culturel ou linguistique).
+
+En anglais, « spilling the beans » signifie « révéler un secret ». Cependant, « knocking over the beans » ou « spilling the vegetable » ne signifie pas la même chose.
+
+En japonais, la phrase « さじを投げる » se traduit littéralement par « il jette une cuillère » mais cela signifie qu’il n’y a rien qu’il puisse faire et que finalement il abandonne.
+
+En néerlandais, « Hij ging met de kippen op stok » se traduit littéralement par « il est allé rôtir avec les poulets » mais cela signifie qu’il est allé au lit tôt.
+
+flash
+alternance de luminosité relative qui peut causer des crises chez certaines personnes si leur taille est suffisamment importante dans une gamme de fréquences spécifiques
+
+Note
+Voir seuil de flash générique et seuil de flash rouge pour plus d’informations sur les types de flashs qui ne sont pas autorisés.
+
+Note
+Voir aussi clignotement.
+
+fonction du lien
+nature d’un résultat obtenu par l’activation d’un lien
+
+fonctionnalité
+processus et résultats atteignables par une action de l’utilisateur
+
+fonctionnalité similaire
+produit le même résultat à l’utilisation
+
+Un bouton « rechercher » sur une page Web et un bouton « trouver » sur une autre peuvent tous les deux proposer un champ pour saisir un terme et lister les sujets présents dans le site et pertinents par rapport au terme soumis. Dans ce cas, ils offrent la même fonctionnalité mais ne sont pas nommés à l’identique.
+
+inactivité de l’utilisateur
+intervalle de temps continu pendant lequel l’utilisateur n’effectue aucune action
+
+La méthode de détection sera déterminée par le site Web ou l’application.
+
+informatif, informative
+dans un but d’informations complémentaires et non exigé pour la conformité
+
+Note
+Le contenu exigé pour la conformité est indiqué comme « normatif ».
+
+interface clavier
+interface utilisée par un logiciel pour obtenir une saisie au clavier
+
+Note
+Une interface clavier permet aux utilisateurs de fournir aux programmes une saisie au clavier même si la technologie native ne comporte pas de clavier.
+
+Note
+Un assistant numérique personnel (PDA) à écran tactile possède une interface clavier intégrée à son système d’exploitation et un connecteur pour des claviers externes. Les applications dans le PDA peuvent utiliser l’interface pour obtenir une saisie au clavier externe ou par d’autres applications qui simulent une sortie clavier comme les interpréteurs d’écriture manuscrite ou les applications de transcription vocale en texte avec des fonctionnalités « d’émulation clavier ».
+
+L’utilisation d’une application (ou de parties d’une application) à travers un pointeur souris dirigé au clavier, comme MouseKeys, ne constitue pas une opération réalisée au travers d’une interface clavier car l’utilisation du programme passe par l’interface de pointage et non pas par l’interface clavier.
+
+interprétation en langue des signes
+traduction d’une langue, généralement parlée, en langue des signes
+
+Note
+Les véritables langues des signes sont des langues indépendantes qui ne sont pas attachées à la langue parlée de la même région ou du même pays.
+
+jargon
+termes utilisés par les personnes d’une façon particulière dans un domaine particulier
+
+Les termes « touches rémanentes » sont du jargon du domaine des technologies d’assistance.
+
+langue
+langue qui est parlée, écrite ou signée (à l’aide des signes visuels ou tactiles) pour communiquer avec les humains
+
+Note
+Voir aussi langue des signes.
+
+langue des signes
+un langage employant des combinaisons de mouvements des mains et des bras, des expressions faciales ou des positions corporelles pour transmettre du sens
+
+luminosité relative
+luminosité relative d’un quelconque point de l’espace colorimétrique normalisé à 0 pour le noir le plus foncé et à 1 pour le blanc le plus clair
+
+Note
+Pour l’espace colorimétrique de couleur sRGB, la luminance relative d’une couleur est définie par L = 0,2126 * R + 0,7152 * G + 0,0722 * B où R, G et B sont définis par :
+
+si RsRGB <= 0,03928 alors R = RsRGB/12,92 sinon R = ((RsRGB+0,055)/1,055) ^ 2,4
+si GsRGB <= 0,03928 alors G = GsRGB/12,92 sinon G = ((GsRGB+0,055)/1,055) ^ 2,4
+si BsRGB <= 0,03928 alors B = BsRGB/12,92 sinon B = ((BsRGB+0,055)/1,055) ^ 2,4
+et RsRGB, GsRGB, et BsRGB sont définis par :
+
+RsRGB = R8bit/255
+GsRGB = G8bit/255
+BsRGB = B8bit/255
+Le caractère "^" est l’opérateur exponentiel. (formules tirées de [sRGB] et [IEC-4WD]).
+
+Note
+La plupart des systèmes utilisés aujourd’hui pour afficher le contenu Web adoptent l’encodage sRGB. À moins que l’on sache qu’un autre espace colorimétrique va être utilisé pour traiter et afficher le contenu, les auteurs devraient l’évaluer en utilisant l’espace colorimétrique sRGB. Si l’on utilise d’autres espaces colorimétriques, voir Comprendre le critère de succès 1.4.3 (en anglais).
+
+Note
+Si un tramage est effectué après l’affichage, alors la valeur source de la couleur est utilisée. Pour les couleurs tramées à la source, les valeurs moyennes des couleurs qui sont tramées devraient être utilisées (R moyen, G moyen, B moyen).
+
+Note
+Il existe des outils qui effectuent automatiquement les calculs lors des tests de contraste et de flash.
+
+Note
+Une version MathML de la définition de la luminosité relative est disponible.
+
+mécanisme
+processus ou technique pour obtenir un résultat
+
+Note
+Le mécanisme peut être explicitement fourni par le contenu ou dépendre de la plateforme ou de l’agent utilisateur, y compris les technologies d’assistance.
+
+Note
+Le mécanisme doit satisfaire à tous les critères de succès (d’un niveau donné) pour déclarer un niveau de conformité.
+
+média de remplacement pour un texte
+média qui ne donne pas plus d’information que ce que donne le texte (directement ou via un équivalent textuel)
+
+Note
+Une version de remplacement pour un texte est fournie à ceux qui bénéficient de représentations équivalentes du texte. Les versions de remplacement de texte peuvent n’être que seulement audio, que seulement vidéo (y compris la vidéo en langue des signes) ou audio-vidéo.
+
+média synchronisé
+flux audio ou vidéo synchronisé avec un autre format pour présenter de l’information et/ou comportant des composants temporels interactifs, à moins que le média soit un média de remplacement pour un texte clairement identifié comme tel
+
+même ordre relatif
+même position relativement aux autres éléments
+
+Note
+Plusieurs éléments sont considérés être dans le même ordre relatif même si d’autres éléments sont insérés ou retirés de l’ordre original. Par exemple, des menus de navigation extensibles peuvent intégrer un niveau de détail additionnel, une section de navigation secondaire peut être insérée dans l’ordre de lecture.
+
+message d’état
+changement dans le contenu qui n’est pas un changement de contexte et qui fournit des informations à l’utilisateur sur le succès ou les résultats d’une action, sur l’état d’attente d’une application, sur la progression d’un processus ou sur l’existence d’erreurs
+
+mis en pause
+arrêté par une action de l’utilisateur et relancé seulement sur demande de l’utilisateur
+
+nom
+texte grâce auquel un logiciel peut identifier pour l’utilisateur un composant du contenu Web
+
+Note
+Le nom peut être caché et présenté seulement aux technologies d’assistance, alors qu’une étiquette est présentée à tous les utilisateurs. Dans de nombreux cas (mais pas dans tous), l’étiquette et le nom sont identiques.
+
+Note
+Celui-ci n’a pas de lien avec l’attribut HTML name.
+
+normatif
+exigé pour la conformité
+
+Note
+Il est possible d’être en conformité stricte avec ce document de nombreuses manières bien définies.
+
+Note
+Le contenu identifié comme « informatif » ou « non-normatif » n’est jamais exigé pour la conformité.
+
+ordre de lecture correct
+tout ordre séquentiel où les mots et les paragraphes sont présentés dans un ordre qui ne modifie pas la signification du contenu
+
+page Web
+une ressource autonome obtenue depuis un URI unique grâce au protocole HTTP, accompagnée de toutes les autres ressources utilisées dans la restitution ou conçues pour être restituées simultanément par un agent utilisateur
+
+Note
+Bien que toutes les « autres ressources » seraient restituées avec la ressource primaire, elles ne sont pas nécessairement restituées simultanément.
+
+Note
+À des fins de conformité avec ces règles, une ressource doit être autonome à l’intérieur du périmètre de conformité pour être considérée comme une page Web.
+
+Une ressource Web incluant toutes les images et médias liés.
+
+Un programme Web de courrier électronique (Webmail) développé à l’aide d’AJAX (Asynchronous JavaScript and XML, JavaScript asynchrone et XML). Le programme réside intégralement à l’adresse http://exemple.com/mail, mais comprend une boîte de réception, un carnet d’adresses et un calendrier. Des liens et des boutons permettent d’afficher la boîte de réception, les contacts ou le calendrier, mais ne changent pas globalement l’URI de la page.
+
+Un site portail personnalisable, dans lequel les utilisateurs peuvent choisir le contenu à afficher à partir d’un ensemble de modules de contenu.
+
+Quand on saisit « http://shopping.exemple.com/ » dans son navigateur, on entre dans un environnement commercial animé et interactif dans lequel on se déplace visuellement dans une boutique, retirant les produits directement depuis les rayons pour les placer dans un panier d’achat face à soi. Cliquer sur un produit déclenche une démonstration avec la fiche technique juste à côté. Cela peut être un site Web à page unique ou simplement une page à l’intérieur d’un site Web.
+
+parcouru de façon séquentielle
+parcouru dans l’ordre défini par le déplacement du focus (d’un élément à l’autre) en utilisant une interface clavier
+
+personnalisé visuellement
+la police, la taille, la couleur et le fond sont paramétrables
+
+pixel CSS
+angle visuel d’environ 0,0213 degré
+
+Un pixel CSS est l’unité de mesure canonique pour toutes les longueurs et mesures en CSS. Cette unité est indépendante de la densité et différente des pixels matériels réels présents sur un écran. Les agents utilisateurs et les systèmes d’exploitation devraient garantir qu’un pixel CSS représente la meilleure approximation du pixel de référence défini dans le module CSS Values and Units de niveau 3 (en anglais) [css3-values], qui tient compte des dimensions physiques de l’écran et de la distance de visualisation supposée (facteurs qui ne peuvent être déterminés par les auteurs de contenu).
+
+pointage à contact unique
+action de pointage qui fonctionne au moyen d’un seul point de contact avec l’écran, y compris les appuis courts et les simples clics, les doubles appuis et les doubles clics, les appuis longs et les gestes basés sur un tracé.
+
+pointeur d’entrée
+dispositif d’entrée pouvant cibler une coordonnée spécifique (ou un ensemble de coordonnées) sur un écran, tel qu’une souris, un stylet ou un contact tactile
+
+Voir aussi la définition de pointeur dans Pointer Events (en anglais) [pointerevents].
+
+pré-enregistré
+information qui n’est pas diffusée en direct
+
+premier cycle de l’enseignement secondaire
+les deux ou trois années de scolarité qui commencent après six ans environ d’enseignement primaire et qui se terminent après neuf ans environ de scolarisation depuis le début de l’enseignement primaire
+
+Note
+Cette définition se fonde sur la norme de Classification internationale type de l’éducation de l’[UNESCO].
+
+présentation
+rendu du contenu sous une forme perceptible par l’utilisateur
+
+processus
+série d’actions de l’utilisateur dont l’enchaînement est nécessaire à l’accomplissement d’une tâche
+
+Utilisation réussie par l’utilisateur, sur un site de vente, d’un enchaînement de pages Web permettant de voir différents produits, des prix et des offres, de sélectionner des produits, de soumettre une commande, de fournir les informations d’envoi et de paiement.
+
+Une page permettant de créer un compte utilisateur nécessitant l’accomplissement d’un test de Turing avant de pouvoir accéder à cette page de formulaire de création de compte.
+
+propriété de style
+propriété dont la valeur détermine la présentation (par exemple, la police, la couleur, la taille, l’emplacement, les marges intérieures (padding), le volume, la prosodie de la synthèse vocale) des éléments de contenu lorsqu’ils sont restitués (par exemple, à l’écran, par un haut-parleur, sur une plage braille) par les agents utilisateurs.
+
+Les propriétés de style peuvent avoir plusieurs origines :
+
+Les styles par défaut de l’agent utilisateur : les valeurs des propriétés de style par défaut appliquées en l’absence de tout style d’auteur ou d’utilisateur. Certaines technologies Web spécifient un rendu par défaut, d’autres non ;
+Styles d’auteur : les valeurs des propriétés de style qui sont définies par l’auteur dans le cadre du contenu (par exemple, les styles en ligne, les feuilles de style de l’auteur) ;
+Styles de l’utilisateur : les valeurs des propriétés de style qui sont définies par l’utilisateur (par exemple, via les paramètres de l’interface de l’agent utilisateur, les feuilles de style de l’utilisateur).
+purement décoratif
+utilisé seulement dans un but esthétique, ne fournissant aucune information et n’ayant aucune fonctionnalité
+
+Note
+Un texte est purement décoratif si les mots peuvent être réarrangés ou remplacés sans changer leur raison d’être.
+
+La page de couverture d’un dictionnaire présente un arrière-plan estompé et constitué de mots choisis au hasard.
+
+raccourci clavier
+moyen alternatif pour déclencher une action par l’appui d’une ou plusieurs touches
+
+rapport de contraste
+(L1 + 0,05) / (L2 + 0,05), où
+
+L1 est la luminosité relative de la couleur la plus claire et
+L2 est la luminosité relative de la couleur la plus sombre.
+Note
+Le rapport de contraste peut varier de 1 à 21 (communément écrit 1:1, 1 pour 1, à 21:1, 21 pour 1).
+
+Note
+Étant donné que les auteurs ne contrôlent pas la configuration de l’utilisateur concernant le rendu du texte (par exemple le lissage de police ou l’anti-crénelage), le rapport de contraste du texte peut être évalué en désactivant l’anti-crénelage.
+
+Note
+En ce qui concerne les critères de succès 1.4.3 et 1.4.6, le contraste est mesuré en tenant compte de l’arrière-plan sur lequel le texte est normalement affiché. Si aucune couleur d’arrière-plan n’est spécifiée, il est considéré comme blanc.
+
+Note
+La couleur d’arrière-plan est la couleur spécifiée du contenu sur lequel le texte est normalement affiché. Il est considéré comme une erreur de ne pas définir une couleur d’arrière-plan lorsque la couleur du texte est spécifiée, parce que la couleur d’arrière-plan de l’utilisateur est inconnue et ne peut donc pas être évaluée pour vérifier si le contraste est suffisant. Pour la même raison, il est aussi considéré comme une erreur de ne pas définir la couleur du texte lorsqu’une couleur d’arrière-plan est spécifiée.
+
+Note
+Lorsqu’il y a une bordure autour de la lettre, la bordure peut augmenter le contraste et serait utilisée dans le calcul du contraste entre la lettre et son arrière-plan. La couleur d’une bordure étroite autour de la lettre serait utilisée à la place de la lettre. Une bordure large autour de la lettre qui remplit l’espace dans lequel se découpe le détail de la lettre agit comme un halo et serait considérée comme un arrière-plan.
+
+Note
+La conformité aux WCAG devrait être évaluée pour les paires de couleurs spécifiées dans le contenu qu’un auteur s’attendrait à voir apparaître de façon adjacente dans une présentation habituelle. Les auteurs n’ont pas besoin de prendre en considération les présentations inhabituelles comme les changements de couleurs faits par l’agent utilisateur sauf si ces changements sont provoqués par le code de l’auteur.
+
+région
+section de contenu perceptible, déterminée par un programme informatique
+
+Note
+En HTML, toute zone identifiée avec un rôle de repère (landmark) serait considérée comme une région.
+
+relations
+associations significatives entre des parties distinctes du contenu
+
+rôle
+texte ou nombre par lequel un logiciel peut identifier la fonction d’un composant dans du contenu Web
+
+Un nombre qui indique si une image sert d’hyperlien, de bouton de commande ou de case à cocher.
+
+satisfait à un critère de succès
+le critère de succès ne se révèle pas « faux » lors de l’évaluation de la page
+
+section
+une portion autonome de contenu écrit qui traite d’un ou plusieurs sujets ou idées liés entre eux
+
+Note
+Une section peut consister en un ou plusieurs paragraphes et inclure des graphiques, des tableaux, des listes et des sous-sections.
+
+seuil de flash générique et seuil de flash rouge
+un flash ou une séquence d’images changeant rapidement est en dessous du seuil de flash (c’est-à-dire que le contenu est conforme) si l’une des conditions suivantes est satisfaite :
+
+il n’y a pas plus de trois flashs génériques et pas plus de trois flashs rouges par seconde ; ou
+la surface d’affichage combinée des flashs simultanés ne représente pas plus de 0,006 stéradian dans chaque champ visuel de 10 degrés sur l’écran (soit 25% de chaque champ visuel de 10 degrés sur l’écran) à une distance habituelle de visualisation
+où :
+
+un flash générique est défini comme une alternance de luminosité relative de 10% ou plus par rapport à la luminosité relative maximum, où la luminosité relative de l’image la plus sombre est en dessous de 0,80 et où « une alternance » est définie comme étant une augmentation suivie d’une diminution ou une diminution suivie d’une augmentation, et
+un flash rouge est défini comme toute alternance de transition impliquant un rouge saturé.
+Exception : Le flash qui suit un modèle précis et équilibré comme du bruit blanc ou un modèle de damier alterné avec des « carrés » dont les côtés font moins de 0,1 degré (du champ visuel à une distance habituelle de visualisation) ne dépasse pas le seuil de flash.
+
+Note
+Pour les logiciels ou le contenu Web, un rectangle de 341 x 256 pixels n’importe où sur la surface d’affichage de l’écran, quand la résolution est à 1024 x 768 pixels, fournit une bonne estimation de ce que représente 10 degrés du champ visuel sur l’écran pour un écran et une distance habituelle de visualisation. Par exemple des écrans de 38 à 43 centimètres (15 à 17 pouces) à une distance de 55 à 65 centimètres (22-26 pouces). (Un affichage à une résolution supérieure du même contenu produirait des images plus petites et plus sûres, c’est pourquoi des résolutions inférieures sont utilisées pour définir le seuil.)
+
+Note
+Une transition est le changement, dans un temps donné, de luminosité relative (ou de luminosité relative ou de couleur pour le flash rouge) entre les pics et les creux adjacents dans un ensemble de mesures de luminosité relative (ou de luminosité relative ou de couleur pour le flash rouge). Un flash est constitué de deux transitions opposées.
+
+Note
+La définition couramment utilisée dans le domaine pour « deux transitions opposées de rouge saturé » est : pour chacun ou tous les états impliqués dans chacune des transitions, R/(R+ G + B) >= 0,8, et le changement dans la valeur de (R-G-B)x320 est > 20 (les valeurs négatives de (R-G-B)x320 sont considérées comme nulles) pour chacune des transitions. Les valeurs R, G, B se classent entre 0 et 1 tel que spécifié dans la définition de « luminosité relative ». [HARDING-BINNIE]
+
+Note
+Des outils sont disponibles pour effectuer l’analyse depuis des captures vidéos. Cependant, aucun outil n’est nécessaire pour évaluer cette condition si le flash est inférieur ou égal à 3 flashs par seconde. Le contenu est automatiquement conforme (voir #1 et #2 ci-dessus).
+
+seulement audio
+une présentation temporelle qui contient seulement de l’audio (sans vidéo ni interaction)
+
+seulement vidéo
+une présentation temporelle qui ne contient que de la vidéo (aucun flux audio ni aucune interaction)
+
+sous-titres
+visuel synchronisé ou équivalent textuel pour l’information audio avec ou sans parole nécessaire à la compréhension du contenu d’un média
+
+Note
+Les sous-titres (en anglais captions) sont similaires à ceux qui sont utilisés seulement pour les dialogues (en anglais subtitles) sauf que les sous-titres ne communiquent pas seulement le contenu des dialogues parlés mais aussi des équivalents pour les informations audio autres que le dialogue et nécessaires à la compréhension du contenu du programme, y compris les effets sonores, la musique, les rires, l’identification et le positionnement des interlocuteurs.
+
+Note
+Les sous-titres codés sont de la même espèce mais peuvent être activés ou désactivés dans certains lecteurs multimédia.
+
+Note
+Les sous-titres visibles sont des sous-titres qui ne peuvent être désactivés. Par exemple, si les sous-titres sont un équivalent visuel en texte sous forme d’image intégré à la vidéo.
+
+Note
+Les sous-titres ne devraient pas masquer l’information pertinente de la vidéo, même partiellement.
+
+Note
+Dans certaines langues comme l’anglais on distingue entre caption et subtitles, le terme caption étant parfois traduit en français par sous-titres pour malentendants.
+
+Note
+L’audio-description peut aussi être sous-titrée, mais n’a pas besoin de l’être, étant donné qu’il s’agit d’une description d’information qui est déjà présentée visuellement.
+
+structure
+La manière dont les parties d’une page Web sont organisées entre elles ; et
+La manière dont un groupe de pages Web est organisé
+technologie d’assistance (tel qu’utilisé dans ce document)
+matériel ou logiciel qui agit comme agent utilisateur ou simultanément avec un agent utilisateur usuel afin de fournir des fonctionnalités répondant aux besoins des utilisateurs ayant des limitations fonctionnelles, fonctionnalités qui vont au-delà de celles qui sont offertes par les agents utilisateurs usuels
+
+Note
+Les fonctionnalités fournies par les technologies d’assistance comprennent des présentations de remplacement (par exemple de la synthèse vocale ou du contenu agrandi), des méthodes de saisie alternatives (par exemple la voix), des mécanismes de navigation ou d’orientation supplémentaires et des transformations de contenu (par exemple pour rendre un tableau plus accessible).
+
+Note
+Les technologies d’assistance communiquent souvent les données et les messages aux agents utilisateurs usuels en utilisant et en surveillant le fonctionnement d’une API (interface de programmation).
+
+Note
+La distinction entre agents utilisateurs usuels et technologies d’assistance n’est pas absolue. Plusieurs agents utilisateurs usuels comportent des fonctions d’assistance aux utilisateurs ayant des limitations fonctionnelles. La principale différence est que ces agents utilisateurs usuels visent un public large et diversifié qui comprend des personnes avec et sans limitations fonctionnelles. Les technologies d’assistance visent des populations plus restreintes d’utilisateurs ayant des limitations fonctionnelles particulières. L’assistance fournie par une technologie d’assistance est plus spécifique et appropriée aux besoins des utilisateurs visés. Un agent utilisateur usuel peut comporter des fonctionnalités importantes pour les technologies d’assistance comme l’extraction du contenu Web à partir d’objets de programmation ou l’analyse syntaxique du balisage par paquets identifiables.
+
+Les technologies d’assistance qui sont importantes dans le contexte du présent document comprennent les technologies suivantes :
+
+les agrandisseurs d’écran et les autres assistants de lecture visuelle qui sont utilisés par les personnes ayant des limitations de la vision, de la perception ou d’accès physique à l’imprimé pour modifier la police de caractères, la taille, l’espacement, la couleur, la synchronisation avec la synthèse vocale, etc. dans le but d’améliorer la lisibilité visuelle du rendu des textes et des images ;
+les lecteurs d’écran qui sont utilisés par les personnes aveugles pour lire l’information textuelle en synthèse vocale ou en braille ;
+les logiciels de conversion du texte en parole qui sont utilisés par certaines personnes ayant des limitations cognitives, des limitations du langage et des difficultés d’apprentissage pour convertir le texte en synthèse vocale ;
+les logiciels de reconnaissance vocale qui peuvent être utilisés par les personnes ayant certaines limitations motrices ;
+des claviers de remplacement qui sont utilisés par des personnes ayant certaines limitations motrices pour simuler le clavier (y compris des claviers de remplacement qui utilisent des pointeurs de tête, des commutateurs simples, des dispositifs d’aspiration/expiration et d’autres dispositifs spéciaux d’aide à la saisie.) ;
+des dispositifs de pointage adaptés qui sont utilisés par des personnes ayant certaines limitations motrices pour simuler le pointeur de la souris et l’activation des boutons.
+technologie Web
+mécanisme pour encoder les instructions devant être restituées, jouées ou exécutées par les agents utilisateurs
+
+Note
+Tels qu’employés dans ces règles, l’expression « technologie Web » et le mot « technologie » (utilisé seul) désignent les technologies relatives aux contenus Web.
+
+Note
+Les technologies relatives aux contenus Web comprennent les langages de balisage, les formats de données ou les langages de programmation que les auteurs sont amenés à utiliser seuls ou combinés pour créer des expériences pour l’utilisateur final qui vont de pages Web statiques jusqu’à des présentations multimédia synchronisées, en passant par des applications Web dynamiques.
+
+On compte parmi les exemples les plus fréquents de technologies Web : HTML, CSS, SVG, PNG, PDF, Flash et JavaScript.
+
+texte
+séquence de caractères pouvant être déterminée par un programme informatique et exprimant quelque chose dans une langue donnée.
+
+texte sous forme d’image
+texte qui est restitué sous une forme non textuelle (par exemple une image) dans le but de permettre un effet visuel particulier
+
+Note
+Cela n’inclut pas le texte qui est une partie d’une image qui contient d’autres contenus visuels signifiants.
+
+Le nom d’une personne sur un badge dans une photographie.
+
+urgence
+un événement ou une situation soudaine et imprévue qui exige une action immédiate afin de préserver la santé, la sécurité ou la propriété
+
+utilisé de manière inhabituelle ou de façon limitée
+mots employés de telle manière qu’ils obligent les utilisateurs à savoir exactement quelle définition appliquer afin de comprendre correctement le contenu
+
+Le terme « mémoire » possède une signification différente dans une conversation universitaire de celle qu’il peut avoir dans un article consacré au stockage informatique, mais la définition pertinente peut être déduite du contexte. À l’inverse, le mot « texte » est utilisé de manière très spécifique dans les WCAG 2.1, à tel point qu’une définition figure dans le glossaire.
+
+version de remplacement conforme
+version qui
+
+se conforme au niveau déterminé et
+fournit toutes les informations similaires et les mêmes fonctionnalités dans la même langue et
+est aussi à jour que le contenu non conforme et
+pour laquelle au moins l’une des affirmations suivantes est vraie :
+
+la version conforme peut être atteinte à partir de la page non conforme via un mécanisme compatible avec l’accessibilité ou
+la version non conforme peut être atteinte seulement à partir de la version conforme ou
+la version non conforme peut être atteinte seulement à partir d’une page conforme qui fournit aussi un mécanisme pour atteindre la version conforme.
+Note
+Dans cette définition, « peut être atteinte seulement » signifie qu’il y a un mécanisme comme une redirection conditionnelle, qui empêche un utilisateur « d’atteindre » (de charger) la page non conforme à moins que l’utilisateur ne vienne justement de la version conforme de cette même page.
+
+Note
+La version de remplacement n’a pas besoin d’être appariée page par page avec la version originale (par exemple la version de remplacement conforme peut se présenter en plusieurs pages).
+
+Note
+Si des versions sont proposées dans plusieurs langues, une version de remplacement conforme est donc requise pour chacune de ces langues.
+
+Note
+Des versions de remplacement peuvent aussi être fournies afin d’accommoder différents environnements technologiques ou différents groupes d’utilisateurs. Chaque version devrait être aussi conforme que possible. Une version devrait être entièrement conforme afin de satisfaire à l’exigence de conformité 1.
+
+Note
+La version de remplacement conforme n’a pas besoin d’être située dans le périmètre de conformité ni même sur le même site Web tant qu’elle est aussi librement disponible que la version non conforme.
+
+Note
+Une version de remplacement ne devrait pas être confondue avec un contenu additionnel qui s’ajoute à la page originale pour en améliorer la compréhension.
+
+Note
+Permettre la configuration des préférences de l’utilisateur à l’intérieur du contenu afin de produire une version conforme est un mécanisme acceptable pour atteindre une autre version tant que la méthode utilisée pour configurer les préférences est compatible avec l’accessibilité.
+
+Voir Comprendre Version de remplacement conforme (en anglais)
+
+version de remplacement pour un média temporel
+document renfermant dans un ordre correct une description des contenus visuels et sonores d’un média temporel et fournissant un moyen de réaliser les effets de toute interaction temporelle
+
+Note
+Un scénario utilisé pour créer le contenu d’un média synchronisé serait conforme à cette définition seulement s’il a été corrigé afin de représenter fidèlement la version finale du média synchronisé après édition.
+
+vidéo
+vidéo la technologie des images ou photos en mouvement ou en séquence
+
+Note
+Une vidéo peut être constituée d’images fixes ou animées ou des deux.
+
+7. Finalités de saisie des composants d’interface utilisateur§
+Cette section contient une liste des finalités de saisie courantes des composants d’interface utilisateur. Les termes ci-dessous ne sont pas des mots-clés qui doivent être utilisés, mais représentent plutôt des finalités qui doivent être intégrées dans la taxonomie utilisée par une page Web. Le cas échéant, les auteurs identifient les contrôles avec la taxonomie choisie pour indiquer la finalité sémantique. Cela permet aux agents utilisateurs et aux technologies d’assistance d’appliquer des présentations personnalisées pour permettre à un plus grand nombre de personnes de comprendre et d’utiliser le contenu.
+
+Note
+La liste des finalités du type de saisie est basée sur les finalités du contrôle définies dans la section Autofill field de HTML 5.2 (en anglais), mais il est important de comprendre qu’une technologie différente peut intégrer tout ou partie des mêmes concepts dans sa spécification et que seuls les concepts équivalents aux significations ci-dessous sont requis.
+
+Les finalités de saisie suivantes sont censées se rapporter à l’utilisateur du contenu et ne concernent que les informations relatives à cette personne.
+
+name — Nom complet
+honorific-prefix — Préfixe, civilité ou titre (par exemple, « M. », « Mme », « Dr »)
+given-name — Prénom
+additional-name — Prénoms additionnels (dans certaines cultures occidentales, également appelés deuxième, voire troisième prénoms)
+family-name — Nom de famille (dans certaines cultures occidentales, également appelé nom)
+honorific-suffix — Suffixe (par exemple, « Jr. », « B.Sc. », « MBASW », « II », « Fils », « L’ancien », « Président d’honneur », « Docteur honoris causa », « Grand-croix de la Légion d’honneur »)
+nickname — Surnom, pseudonyme, identifiant : un nom généralement court utilisé à la place du nom complet
+organization-title — Titre du poste (par exemple, « Ingénieure logiciel », « Première vice-présidente », « Directeur général adjoint »)
+username — Un nom d’utilisateur
+new-password — Un nouveau mot de passe (par exemple, lors de la création d’un compte ou de la modification d’un mot de passe)
+current-password — Le mot de passe actuel du compte identifié par le champ username (par exemple, lors de l’ouverture de session)
+organization — Nom de l’organisme correspondant à la personne, à l’adresse ou aux coordonnées figurant dans les autres champs associés à ce champ
+street-address — Adresse postale (plusieurs lignes, les retours à la ligne sont conservés)
+address-line1 — Adresse postale (une ligne par champ, ligne 1)
+address-line2 — Adresse postale (une ligne par champ, ligne 2)
+address-line3 — Adresse postale (une ligne par champ, ligne 3)
+address-level4 — Le niveau administratif le plus détaillé, dans les adresses comportant quatre niveaux administratifs
+address-level3 — Le troisième niveau administratif, dans les adresses comportant trois niveaux administratifs ou plus
+address-level2 — Le deuxième niveau administratif, dans les adresses comportant deux niveaux administratifs ou plus ; dans les pays comportant deux niveaux administratifs, il s’agit généralement de la ville, du village ou de toute autre localité dans laquelle se trouve l’adresse de la rue concernée
+address-level1 — Le niveau administratif le plus général de l’adresse, c’est-à-dire la province dans laquelle se trouve la localité ; par exemple, aux États-Unis, il s’agit de l’État ; en Suisse, du canton ; au Royaume-Uni, de la ville postale
+country — Code du pays
+country-name — Nom du pays
+postal-code — Code postal, code ZIP, code CEDEX (s’il s’agit d’un CEDEX, ajoutez « CEDEX » et le renvoi, le cas échéant, au champ address-level2)
+cc-name — Nom complet tel qu’il figure sur le moyen de paiement
+cc-given-name — Prénom tel qu’il figure sur le moyen de paiement
+cc-additional-name — Prénoms additionnels indiqués sur le moyen de paiement (dans certaines cultures occidentales, également appelés deuxième, voire troisième prénoms)
+cc-family-name — Nom de famille indiqué sur le moyen de paiement (dans certaines cultures occidentales, également appelé nom)
+cc-number — Code identifiant le moyen de paiement (par exemple, le numéro de carte de crédit)
+cc-exp — Date d’expiration du moyen de paiement
+cc-exp-month — Mois de la date d’expiration du moyen de paiement
+cc-exp-year — Année de la date d’expiration du moyen de paiement
+cc-csc — Code de sécurité du moyen de paiement (également appelé code de sécurité de la carte (CSC), code de validation de la carte (CVC), valeur de vérification de la carte (CVV), code du panneau de signature (SPC), ID de la carte de crédit (CCID), etc.)
+cc-type — Type de moyen de paiement
+transaction-currency — La devise que l’utilisateur préfère utiliser pour la transaction
+transaction-amount — Le montant que l’utilisateur souhaite pour la transaction (par exemple, lors de la saisie d’une offre de prix ou d’un prix de vente)
+language — Langue préférée
+bday — Date de naissance
+bday-day — Jour de naissance
+bday-month — Mois de naissance
+bday-year — Année de naissance
+sex — Identité de genre (par exemple, féminin, Māhū)
+url — Page d’accueil ou autre page Web correspondant à l’organisme, à la personne, à l’adresse ou aux coordonnées figurant dans les autres champs associés à ce champ
+photo — Photographie, icône ou autre image correspondant à l’organisme, à la personne, à l’adresse ou aux coordonnées figurant dans les autres champs associés à ce champ
+tel — Numéro de téléphone complet, y compris l’indicatif du pays
+tel-country-code — Indicatif du pays du numéro de téléphone
+tel-national — Numéro de téléphone sans l’indicatif du pays, avec un préfixe interne au pays le cas échéant
+tel-area-code — Indicatif régional du numéro de téléphone, avec un préfixe interne au pays appliqué le cas échéant
+tel-local — Numéro de téléphone sans l’indicatif du pays ni l’indicatif régional
+tel-local-prefix — Première partie du numéro de téléphone qui suit l’indicatif régional, lorsque cet élément est scindé en deux composantes
+tel-local-suffix — Deuxième partie du numéro de téléphone qui suit l’indicatif régional, lorsque cet élément est scindé en deux composantes
+tel-extension — Code d’extension interne du numéro de téléphone
+email — Adresse de courrier électronique
+impp — URL représentant un point de terminaison du protocole de messagerie instantanée (par exemple, « aim:goim?screenname=example » ou « xmpp:fred@example.net»)
+A. Remerciements§
+Des informations supplémentaires à propos de la participation au groupe de travail sur les règles d’accessibilité (AG WG) sont consultables sur la page d’accueil du groupe de travail (en anglais).
+
+A.1 Personnes participant activement au groupe de travail AG WG au moment de la publication :§
+Jake Abma (Expert invité)
+Shadi Abou-Zahra (W3C)
+Chuck Adams (Oracle Corporation)
+Amani Ali (Nomensa)
+Jim Allan (Expert invité)
+Paul Adam (Deque Systems, Inc.)
+Christopher Auclair (VitalSource | Ingram Content Group)
+Jon Avila (Level Access)
+Tom Babinszki (IBM Corporation)
+Bruce Bailey (U.S. Access Board)
+Renaldo Bernard (Université de Southampton)
+Chris Blouch (Level Access)
+Denis Boudreau (Deque Systems, Inc.)
+Judy Brewer (W3C)
+Shari Butler (Pearson plc)
+Thaddeus Cambron (Expert invité)
+Alastair Campbell (Nomensa)
+Laura Carlson (Expert invité)
+Louis Cheng (Google)
+Pietro Cirrincione (Expert invité)
+Vivienne Conway (Web Key IT Pty Ltd)
+Michael Cooper (W3C)
+Romain Deltour (DAISY Consortium)
+Wayne Dick (Knowbility, Inc)
+Chaohai Ding (Université de Southampton)
+Kim Dirks (Thomson Reuters)
+Shwetank Dixit (BarrierBreak Technologies)
+Anthony Doran (TextHelp)
+E.A. Draffan (Université de Southampton)
+Eric Eggert (W3C)
+Michael Elledge (Expert invité)
+Wilco Fiers (Deque Systems, Inc.)
+Detlev Fischer (Expert invité)
+John Foliot (Deque Systems, Inc.)
+Matt Garrish (DAISY Consortium)
+Alistair Garrison (Level Access)
+Michael Gower (IBM Corporation)
+Jon Gunderson
+Markku Hakkinen (Educational Testing Service)
+Katie Haritos-Shea (Knowbility, Inc)
+Andy Heath (Expert invité)
+Shawn Henry (W3C)
+Thomas Hoffman (Educational Testing Service)
+Sarah Horton (The Paciello Group, LLC)
+Stefan Johansson (Expert invité)
+Marc Johlic (IBM Corporation)
+Rick Johnson (VitalSource | Ingram Content Group)
+Crystal Jones (Microsoft Corporation)
+Andrew Kirkpatrick (Adobe)
+John Kirkwood (Expert invité)
+Jason Kiss (Ministère de l’Intérieur, Gouvernement de Nouvelle-Zélande)
+Maureen Kraft (IBM Corporation)
+JaEun Ku (Université de l’Illinois à Urbana-Champaign)
+Patrick Lauke (The Paciello Group, LLC)
+Shawn Lauriat (Google, Inc.)
+Steve Lee (Expert invité)
+Alex Li (Microsoft Corporation)
+Chris Loiselle (Expert invité)
+Greg Lowney (Expert invité)
+Adam Lund (Thomson Reuters)
+David MacDonald (Expert invité)
+Erich Manser (IBM Corporation)
+Kurt Mattes (Deque Systems, Inc.)
+Scott McCormack (Level Access)
+Chris McMeeking (Deque Systems, Inc.)
+Jan McSorley (Pearson plc)
+Neil Milliken (Unify Software and Solutions)
+Rachael Montgomery (Expert invité)
+Mary Jo Mueller (IBM Corporation)
+Brooks Newton (Thomson Reuters)
+James Nurthen (Oracle Corporation)
+Joshue O Connor (Expert invité)
+Sailesh Panchang (Deque Systems, Inc.)
+Charu Pandhi (IBM Corporation)
+Kim Patch (Expert invité)
+Melanie Philipp (Deque Systems, Inc.)
+Mike Pluke (Expert invité)
+Ian Pouncey (The Paciello Group, LLC)
+Ruoxi Ran (W3C)
+Stephen Repsher (Expert invité)
+Jan Richards (Expert invité)
+John Rochford (Expert invité)
+Marla Runyan (Expert invité)
+Stefan Schnabel (SAP SE)
+Ayelet Seeman (Expert invité)
+Lisa Seeman-Kestenbaum (Expert invité)
+Glenda Sims (Deque Systems, Inc.)
+Avneesh Singh (DAISY Consortium)
+David Sloan (The Paciello Group, LLC)
+Alan Smith (Expert invité)
+Jim Smith (Unify Software and Solutions)
+Adam Solomon (Expert invité)
+Jaeil Song (National Information Society Agency (NIA))
+Jeanne Spellman (The Paciello Group, LLC)
+Makoto Ueki (Expert invité)
+Jatin Vaishnav (Deque Systems, Inc.)
+Gregg Vanderheiden (Raising the Floor)
+Evangelos Vlachogiannis (Fraunhofer Gesellschaft)
+Kathleen Wahlbin (Expert invité)
+Can Wang (Zhejiang University)
+Léonie Watson (The Paciello Group, LLC)
+Jason White (Educational Testing Service)
+Mark Wilcock (Unify Software and Solutions)
+A.2 Autres personnes participant activement au groupe de travail AG WG et autres personnes ayant contribué aux WCAG 2.0, WCAG 2.1 ou personnes ressources§
+Paul Adam, Jenae Andershonis, Wilhelm Joys Andersen, Andrew Arch, Avi Arditti, Aries Arditi, Mark Barratt, Mike Barta, Sandy Bartell, Kynn Bartlett, Chris Beer, Charles Belov, Marco Bertoni, Harvey Bingham, Chris Blouch, Paul Bohman, Frederick Boland, Denis Boudreau, Patrice Bourlon, Andy Brown, Dick Brown, Doyle Burnett, Raven Calais, Ben Caldwell, Tomas Caspers, Roberto Castaldo, Sofia Celic-Li, Sambhavi Chandrashekar, Mike Cherim, Jonathan Chetwynd, Wendy Chisholm, Alan Chuter, David M Clark, Joe Clark, Darcy Clarke, James Coltham, Earl Cousins, James Craig, Tom Croucher, Pierce Crowell, Nir Dagan, Daniel Dardailler, Geoff Deering, Sébastien Delorme, Pete DeVasto, Iyad Abu Doush, Sylvie Duchateau, Cherie Eckholm, Roberto Ellero, Don Evans, Gavin Evans, Neal Ewers, Steve Faulkner, Bengt Farre, Lainey Feingold, Wilco Fiers, Michel Fitos, Alan J. Flavell, Nikolaos Floratos, Kentarou Fukuda, Miguel Garcia, P.J. Gardner, Alistair Garrison, Greg Gay, Becky Gibson, Al Gilman, Kerstin Goldsmith, Michael Grade, Karl Groves, Loretta Guarino Reid, Jon Gunderson, Emmanuelle Gutiérrez y Restrepo, Brian Hardy, Eric Hansen, Benjamin Hawkes-Lewis, Sean Hayes, Shawn Henry, Hans Hillen, Donovan Hipke, Bjoern Hoehrmann, Allen Hoffman, Chris Hofstader, Yvette Hoitink, Martijn Houtepen, Carlos Iglesias, Richard Ishida, Jonas Jacek, Ian Jacobs, Phill Jenkins, Barry Johnson, Duff Johnson, Jyotsna Kaki, Shilpi Kapoor, Leonard R. Kasday, Kazuhito Kidachi, Ken Kipness, Johannes Koch, Marja-Riitta Koivunen, Preety Kumar, Kristjan Kure, Andrew LaHart, Gez Lemon, Chuck Letourneau, Aurélien Levy, Harry Loots, Scott Luebking, Tim Lacy, Jim Ley, Alex Li, William Loughborough, N Maffeo, Mark Magennis, Kapsi Maria, Luca Mascaro, Matt May, Sheena McCullagh, Liam McGee, Jens Oliver Meiert, Niqui Merret, Jonathan Metz, Alessandro Miele, Steven Miller, Mathew J Mirabella, Matt May, Marti McCuller, Sorcha Moore, Charles F. Munat, Robert Neff, Charles Nevile, Liddy Nevile, Dylan Nicholson, Bruno von Niman, Tim Noonan, Sebastiano Nutarelli, Graham Oliver, Sean B. Palmer, Devarshi Pant, Nigel Peck, Anne Pemberton, David Poehlman, Ian Pouncey, Charles Pritchard, Kerstin Probiesch, W Reagan, Adam Victor Reed, Chris Reeve, Chris Ridpath, Lee Roberts, Mark Rogers, Raph de Rooij, Gregory J. Rosmaita, Matthew Ross, Sharron Rush, Joel Sanda, Janina Sajka, Roberto Scano, Gordon Schantz, Tim van Schie, Wolf Schmidt, Stefan Schnabel, Cynthia Shelly, Glenda Sims, John Slatin, Becky Smith, Jared Smith, Andi Snow-Weaver, Neil Soiffer, Mike Squillace, Michael Stenitzer, Diane Stottlemyer, Christophe Strobbe, Sarah J Swierenga, Jim Thatcher, Terry Thompson, Justin Thorp, David Todd, Mary Utt, Jean Vanderdonckt, Carlos A Velasco, Eric Velleman, Gijs Veyfeyken, Dena Wainwright, Paul Walsch, Daman Wandke, Richard Warren, Elle Waters, Takayuki Watanabe, Gian Wild, David Wooley, Wu Wei, Kenny Zhang, Leona Zumbo.
+
+A.3 Organismes financeurs§
+Cette publication a été en partie financée par des fonds fédéraux du ministère de la Santé et des Services sociaux des États-Unis, par l’Institut national pour la recherche sur le handicap, la vie autonome et la réadaptation (National Institute on Disability, Independent Living, and Rehabilitation Research ou NIDILRR), initialement sous le numéro de référence ED-OSE-10-C-0067 et maintenant sous le numéro de référence HHSP23301500054C. Le contenu de cette publication ne reflète pas nécessairement les avis ou politiques du ministère de la Santé et des Services sociaux ou du ministère de l’Éducation des États-Unis, et la mention de noms de marques, de produits commerciaux ou d’organismes ne signifie pas non plus qu’ils ont été approuvés par le gouvernement des États-Unis.
+
+B. Références§
+B.1 Références normatives§
+[css3-values]
+CSS Values and Units Module Level 3. Tab Atkins Jr. ; Elika Etemad. W3C. 29 septembre 2016. Recommandation candidate du W3C. URL : https://www.w3.org/TR/css-values-3/
+[pointerevents]
+Pointer Events. Jacob Rossi ; Matt Brubeck. W3C. 24 février 2015. Recommandation du W3C. URL : https://www.w3.org/TR/pointerevents/
+[WCAG20]
+Web Content Accessibility Guidelines (WCAG) 2.0. Ben Caldwell ; Michael Cooper ; Loretta Guarino Reid ; Gregg Vanderheiden et al. W3C. 11 décembre 2008. Recommandation du W3C. URL : https://www.w3.org/TR/WCAG20/
+B.2 Références informatives§
+[HARDING-BINNIE]
+Independent Analysis of the ITC Photosensitive Epilepsy Calibration Test Tape. Harding G. F. A. ; Binnie, C.D..2002.
+[IEC-4WD]
+IEC/4WD 61966-2-1: Colour Measurement and Management in Multimedia Systems and Equipment — Part 2.1: Default Colour Space — sRGB. 5 mai 1998.
+[RFC2119]
+Key words for use in RFCs to Indicate Requirement Levels. S. Bradner. IETF. Mars 1997. Best Current Practice. URL : https://tools.ietf.org/html/rfc2119
+[sRGB]
+A Standard Default Color Space for the Internet — sRGB, Version 1.10. M. Stokes ; M. Anderson ; S. Chandrasekar ; R. Motta. 5 novembre 1996. URL : https://www.w3.org/Graphics/Color/sRGB.html
+[UAAG10]
+User Agent Accessibility Guidelines 1.0. Ian Jacobs ; Jon Gunderson ; Eric Hansen. W3C. 17 décembre 2002. W3C Recommendation. URL: https://www.w3.org/TR/UAAG10/
+[UNESCO]
+International Standard Classification of Education. 1997. URL : http://www.unesco.org/education/information/nfsunesco/doc/isced_1997.htm
+[WAI-WEBCONTENT]
+Web Content Accessibility Guidelines 1.0. Wendy Chisholm ; Gregg Vanderheiden ; Ian Jacobs. W3C. 5 mai 1999. Recommandation du W3C. URL : https://www.w3.org/TR/WAI-WEBCONTENT/
