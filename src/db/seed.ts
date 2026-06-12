@@ -1,8 +1,10 @@
 import { config } from 'dotenv'
 config({ path: '.env.local' })
 
+import { and, eq } from 'drizzle-orm'
+
 import { db } from '@/db'
-import { member, organization, rgaaCriteria } from '@/db/schema'
+import { member, organization, rgaaCriteria, user } from '@/db/schema'
 import { auth } from '@/lib/auth'
 
 /**
@@ -896,40 +898,158 @@ export const rgaaCriteriaSeed = [
 ]
 
 
-async function createAdminUser() {
-    const { user } = await auth.api.signUpEmail({
+// ─── Comptes & cabinets ───────────────────────────────────────────────────────
+// Idempotent : relançable sans planter même si une partie des données existe déjà
+// (on vérifie l'existence avant chaque insert). Trialog héberge le compte admin ;
+// les deux autres cabinets servent à tester l'isolation multi-tenant (chacun ne
+// voit que ses propres données). Mots de passe de dev identiques — jamais en prod.
+
+type SeedMember = {
+    email: string
+    password: string
+    name: string
+    role: 'owner' | 'auditor'
+}
+
+type SeedCabinet = {
+    name: string
+    slug: string
+    members: SeedMember[]
+}
+
+const seedCabinets: SeedCabinet[] = [
+    {
+        name: 'Trialog',
+        slug: 'trialog',
+        members: [
+            {
+                email: 'admin@balise.app',
+                password: 'changeme123',
+                name: 'Admin Balise',
+                role: 'owner',
+            },
+        ],
+    },
+    {
+        name: 'Access42',
+        slug: 'access42',
+        members: [
+            {
+                email: 'owner@access42.fr',
+                password: 'changeme123',
+                name: 'Sophie Bernard',
+                role: 'owner',
+            },
+            {
+                email: 'auditeur@access42.fr',
+                password: 'changeme123',
+                name: 'Lucas Martin',
+                role: 'auditor',
+            },
+        ],
+    },
+    {
+        name: 'Ideance',
+        slug: 'ideance',
+        members: [
+            {
+                email: 'owner@ideance.fr',
+                password: 'changeme123',
+                name: 'Camille Durand',
+                role: 'owner',
+            },
+            {
+                email: 'auditeur@ideance.fr',
+                password: 'changeme123',
+                name: 'Hugo Lefebvre',
+                role: 'auditor',
+            },
+        ],
+    },
+]
+
+// Crée l'utilisateur via Better Auth (qui gère le hash du mot de passe) s'il
+// n'existe pas, sinon réutilise l'existant. Retourne son id.
+async function ensureUser(seedMember: SeedMember): Promise<string> {
+    const existing = await db.query.user.findFirst({
+        where: eq(user.email, seedMember.email),
+        columns: { id: true },
+    })
+    if (existing) {
+        console.log(`  ↺ Compte déjà présent : ${seedMember.email}`)
+        return existing.id
+    }
+
+    const { user: created } = await auth.api.signUpEmail({
         body: {
-            email: 'admin@balise.app',
-            password: 'changeme123',
-            name: 'Admin Balise',
+            email: seedMember.email,
+            password: seedMember.password,
+            name: seedMember.name,
         },
     })
-    console.log('✅ Utilisateur admin créé : admin@balise.app')
+    console.log(`  ✅ Compte créé : ${seedMember.email}`)
+    return created.id
+}
 
-    // Rattache l'admin à un cabinet. Le membership suffit à l'isolation tRPC :
-    // le contexte résout l'organizationId via la première appartenance quand la
-    // session n'a pas encore d'organisation active.
-    const [cabinet] = await db
+// Cabinet identifié par son slug (unique) : réutilisé s'il existe, créé sinon.
+async function ensureCabinet(seed: SeedCabinet): Promise<string> {
+    const existing = await db.query.organization.findFirst({
+        where: eq(organization.slug, seed.slug),
+        columns: { id: true },
+    })
+    if (existing) {
+        return existing.id
+    }
+
+    const [created] = await db
         .insert(organization)
         .values({
             id: crypto.randomUUID(),
-            name: 'Trialog',
-            slug: 'trialog',
+            name: seed.name,
+            slug: seed.slug,
             createdAt: new Date(),
         })
-        .returning()
-    if (!cabinet) {
-        throw new Error('Création du cabinet Trialog échouée.')
+        .returning({ id: organization.id })
+    if (!created) {
+        throw new Error(`Création du cabinet ${seed.name} échouée.`)
     }
+    return created.id
+}
+
+// Rattache l'utilisateur au cabinet s'il ne l'est pas déjà (pas de contrainte
+// d'unicité sur (organization, user) en base, d'où la vérification explicite).
+async function ensureMembership(input: {
+    organizationId: string
+    userId: string
+    role: SeedMember['role']
+}) {
+    const existing = await db.query.member.findFirst({
+        where: and(
+            eq(member.organizationId, input.organizationId),
+            eq(member.userId, input.userId),
+        ),
+        columns: { id: true },
+    })
+    if (existing) return
 
     await db.insert(member).values({
         id: crypto.randomUUID(),
-        organizationId: cabinet.id,
-        userId: user.id,
-        role: 'owner',
+        organizationId: input.organizationId,
+        userId: input.userId,
+        role: input.role,
         createdAt: new Date(),
     })
-    console.log('✅ Cabinet Trialog créé, admin rattaché en tant qu’owner')
+}
+
+async function seedUsersAndCabinets() {
+    for (const seed of seedCabinets) {
+        const organizationId = await ensureCabinet(seed)
+        for (const seedMember of seed.members) {
+            const userId = await ensureUser(seedMember)
+            await ensureMembership({ organizationId, userId, role: seedMember.role })
+        }
+        console.log(`✅ Cabinet ${seed.name} prêt (${seed.members.length} comptes)`)
+    }
 }
 
 export async function seedRgaaCriteria() {
@@ -946,7 +1066,7 @@ export async function seedRgaaCriteria() {
 // Permet de lancer directement : pnpm tsx src/db/seed.ts
 if (require.main === module) {
     seedRgaaCriteria()
-        .then(() => createAdminUser())
+        .then(() => seedUsersAndCabinets())
         .then(() => process.exit(0))
         .catch((err) => {
             console.error(err)

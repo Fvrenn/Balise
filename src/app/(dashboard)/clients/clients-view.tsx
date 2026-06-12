@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react"
 import { Building2, Search } from "lucide-react"
-import { formatDistanceToNow } from "date-fns"
+import { format, formatDistanceToNow } from "date-fns"
 import { fr } from "date-fns/locale"
 
 import type { inferRouterOutputs } from "@trpc/server"
 import { trpc } from "@/trpc/react"
+import { HeaderActions } from "@/components/header-slot"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -20,6 +21,7 @@ import {
 
 import type { AppRouter } from "@/server/routers/_app"
 import { ClientCreateDialog } from "./client-create-dialog"
+import { ClientsStats } from "./clients-stats"
 
 type ClientRow = inferRouterOutputs<AppRouter>["clients"]["list"][number]
 
@@ -38,28 +40,30 @@ export function ClientsView() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
-            Clients
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Les entreprises auditées par votre cabinet.
-          </p>
+      <HeaderActions>
+        <div className="relative w-64">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Rechercher un client…"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="pl-8 bg-surface"
+          />
         </div>
         <ClientCreateDialog />
-      </header>
+      </HeaderActions>
 
-      <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Rechercher un client…"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="pl-8"
-        />
+      <div className="space-y-1">
+        <h1 className="font-heading text-2xl font-bold text-foreground">
+          Clients
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Les entreprises auditées par votre cabinet.
+        </p>
       </div>
+
+      <ClientsStats />
 
       {clientsQuery.isLoading ? (
         <ClientsTableSkeleton />
@@ -91,45 +95,40 @@ function ClientsTable({
   }
 
   return (
-    <div className="rounded-lg border border-border">
+    <div className="grid [&>div]:max-h-70 [&>div]:rounded-lg [&>div]:border">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-surface-2">
           <TableRow>
-            <TableHead>Nom</TableHead>
-            <TableHead>Site web</TableHead>
-            <TableHead className="text-right">Audits</TableHead>
-            <TableHead>Dernier audit</TableHead>
+            <TableHead className="text-ink-3 px-3 py-4">Client</TableHead>
+            <TableHead className="text-ink-3 px-3 py-4">CLIENT DEPUIS</TableHead>
+            <TableHead className="text-right text-ink-3 px-3 py-4">AUDITS</TableHead>
+            <TableHead className="text-right text-ink-3 px-3 py-4">SITES AUDITÉS</TableHead>
+            <TableHead className="text-ink-3 px-3 py-4">DERNIER AUDIT</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="bg-surface">
           {clients.map((client) => (
             <TableRow key={client.id}>
-              <TableCell className="font-medium text-foreground">
-                {client.name}
+              <TableCell className="px-3 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="font-heading uppercase flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-xs font-bold text-secondary-foreground select-none">
+                    {getInitials(client.name)}
+                  </div>
+                  <span className="font-semibold text-foreground">{client.name}</span>
+                </div>
               </TableCell>
-              <TableCell>
-                {client.website ? (
-                  <a
-                    href={toHref(client.website)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary underline-offset-4 hover:underline"
-                  >
-                    {client.website}
-                  </a>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
+              <TableCell className="text-muted-foreground px-3 py-4">
+                {formatDistanceToNow(client.createdAt, { locale: fr })}
               </TableCell>
-              <TableCell className="text-right tabular-nums">
+              <TableCell className="text-right tabular-nums px-3 py-4">
                 {client.auditCount}
               </TableCell>
-              <TableCell className="text-muted-foreground">
+              <TableCell className="text-right tabular-nums px-3 py-4">
+                {client.siteCount}
+              </TableCell>
+              <TableCell className="text-muted-foreground px-3 py-4">
                 {client.lastAuditAt
-                  ? formatDistanceToNow(client.lastAuditAt, {
-                      addSuffix: true,
-                      locale: fr,
-                    })
+                  ? format(client.lastAuditAt, "dd/MM/yyyy")
                   : "—"}
               </TableCell>
             </TableRow>
@@ -164,9 +163,9 @@ function EmptyState() {
   )
 }
 
-function toHref(website: string) {
-  if (website.startsWith("http://") || website.startsWith("https://")) {
-    return website
-  }
-  return `https://${website}`
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return "?"
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }

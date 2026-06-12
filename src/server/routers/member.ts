@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 
 import { protectedProcedure, router } from '@/server/trpc'
-import { member } from '@/db/schema'
+import { member, organization } from '@/db/schema'
 
 type OrganizationRole = 'owner' | 'auditor'
 
@@ -15,6 +15,9 @@ export const memberRouter = router({
                 eq(member.organizationId, ctx.organizationId),
             ),
             columns: { role: true },
+            with: {
+                organization: { columns: { name: true } },
+            },
         })
 
         return {
@@ -22,9 +25,8 @@ export const memberRouter = router({
             name: ctx.user.name,
             email: ctx.user.email,
             image: ctx.user.image,
-            // Défaut prudent : auditor (rôle le moins privilégié) si aucun rôle
-            // explicite n'est trouvé.
             role: (membership?.role ?? 'auditor') as OrganizationRole,
+            organizationName: membership?.organization?.name ?? null,
         }
     }),
 })

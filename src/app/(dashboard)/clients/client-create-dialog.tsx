@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Loader2, Plus } from "lucide-react"
+import { Building2, Loader2, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 import { trpc } from "@/trpc/react"
@@ -10,10 +10,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -22,8 +19,10 @@ import { Label } from "@/components/ui/label"
 export function ClientCreateDialog() {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
-  const [website, setWebsite] = useState("")
-  const [contact, setContact] = useState("")
+  const [note, setNote] = useState("")
+
+  const currentMember = trpc.member.current.useQuery()
+  const organizationName = currentMember.data?.organizationName
 
   const utils = trpc.useUtils()
   const createClient = trpc.clients.create.useMutation({
@@ -39,8 +38,7 @@ export function ClientCreateDialog() {
 
   function resetForm() {
     setName("")
-    setWebsite("")
-    setContact("")
+    setNote("")
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -52,8 +50,7 @@ export function ClientCreateDialog() {
     event.preventDefault()
     createClient.mutate({
       name: name.trim(),
-      website: website.trim() || undefined,
-      contact: contact.trim() || undefined,
+      note: note.trim() || undefined,
     })
   }
 
@@ -65,50 +62,63 @@ export function ClientCreateDialog() {
         <Plus />
         Nouveau client
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Nouveau client</DialogTitle>
-          <DialogDescription>
-            Ajoutez une entreprise à auditer pour votre cabinet.
-          </DialogDescription>
-        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="client-name">Nom</Label>
-            <Input
-              id="client-name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Nom de l'entreprise"
-              required
-              disabled={isSubmitting}
-            />
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden gap-0">
+        {/* En-tête style image */}
+        <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+          <div className="flex items-center gap-4">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-sidebar">
+              <Building2 className="size-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-heading text-base font-semibold text-foreground">
+                Nouveau client
+              </h2>
+              {organizationName && (
+                <p className="text-sm text-muted-foreground">{organizationName}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Corps du formulaire */}
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-5 px-6 py-6">
+            {/* Raison sociale */}
+            <div className="space-y-2">
+              <Label htmlFor="client-name">
+                Raison sociale <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="client-name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="ex. Mairie de Strasbourg"
+                required
+                disabled={isSubmitting}
+                autoFocus
+              />
+            </div>
+
+            {/* Note interne (optionnelle) */}
+            <div className="space-y-2">
+              <Label htmlFor="client-note">
+                Note interne{" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  (optionnel)
+                </span>
+              </Label>
+              <Input
+                id="client-note"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder="Groupe bancaire, plusieurs filiales…"
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="client-website">Site web</Label>
-            <Input
-              id="client-website"
-              value={website}
-              onChange={(event) => setWebsite(event.target.value)}
-              placeholder="exemple.fr"
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="client-contact">Contact</Label>
-            <Input
-              id="client-contact"
-              value={contact}
-              onChange={(event) => setContact(event.target.value)}
-              placeholder="Nom ou e-mail du contact (usage interne)"
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <DialogFooter>
+          <DialogFooter className="border-t border-border px-6 py-4">
             <DialogClose
               render={
                 <Button type="button" variant="outline" disabled={isSubmitting} />
@@ -116,9 +126,16 @@ export function ClientCreateDialog() {
             >
               Annuler
             </DialogClose>
-            <Button type="submit" disabled={isSubmitting || name.trim().length === 0}>
-              {isSubmitting && <Loader2 className="animate-spin" />}
-              Créer
+            <Button
+              type="submit"
+              disabled={isSubmitting || name.trim().length === 0}
+            >
+              {isSubmitting ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <Plus />
+              )}
+              Créer le client
             </Button>
           </DialogFooter>
         </form>

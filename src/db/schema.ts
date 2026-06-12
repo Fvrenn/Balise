@@ -141,8 +141,9 @@ export const clients = pgTable(
             .notNull()
             .references(() => organization.id, { onDelete: 'cascade' }),
         name: text('name').notNull(),
-        website: text('website'),
-        contact: text('contact'), // usage interne uniquement
+        // Description libre du client (ex : « Groupe bancaire, plusieurs filiales »).
+        // Le contact n'est plus porté ici : il dépend du site audité, donc de l'audit.
+        note: text('note'),
         createdAt: timestamp('created_at').notNull().defaultNow(),
         updatedAt: timestamp('updated_at').notNull().defaultNow(),
     },
@@ -169,6 +170,10 @@ export const audits = pgTable(
             .references(() => user.id, { onDelete: 'set null' }),
         name: text('name').notNull(),
         siteUrl: text('site_url').notNull(),
+        // Référent du site pour cet audit : un client peut suivre plusieurs sites,
+        // chacun avec son propre référent, d'où un contact au niveau de l'audit.
+        contactName: text('contact_name'),
+        contactEmail: text('contact_email'),
         status: auditStatus('status').notNull().default('in_progress'),
         // Taux mis en cache — recalculé à chaque changement de finding
         // Formule : conforme / (106 - non_applicable) * 100
@@ -276,6 +281,13 @@ export const organizationRelations = relations(organization, ({ many }) => ({
     invitations: many(invitation),
     clients: many(clients),
     audits: many(audits),
+}))
+
+export const memberRelations = relations(member, ({ one }) => ({
+    organization: one(organization, {
+        fields: [member.organizationId],
+        references: [organization.id],
+    }),
 }))
 
 export const clientsRelations = relations(clients, ({ one, many }) => ({
