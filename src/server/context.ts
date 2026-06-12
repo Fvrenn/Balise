@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 
 import { auth } from '@/lib/auth'
 import { db } from '@/db'
@@ -13,17 +13,42 @@ export async function createTRPCContext(opts: { headers: Headers }) {
     const user = sessionData?.user ?? null
     const session = sessionData?.session ?? null
 
-    // L'organisation active est portée par la session (plugin organization).
-    // Fallback : si elle n'est pas encore fixée, on prend la première
-    // appartenance du membre — un utilisateur Balise appartient à un cabinet.
-    let organizationId = session?.activeOrganizationId ?? null
-    if (user && !organizationId) {
-        const membership = await db.query.member.findFirst({
-            where: eq(member.userId, user.id),
-            columns: { organizationId: true },
-        })
-        organizationId = membership?.organizationId ?? null
-    }
+    const activeOrganizationId = session?.activeOrganizationId ?? null
+    const organizationId = user
+        ? await resolveOrganizationId(user.id, activeOrganizationId)
+        : null
 
     return { db, user, session, organizationId }
+}
+
+// Résout le cabinet courant en garantissant l'appartenance à l'instant T.
+// L'organisation active portée par la session n'est retenue que si le membership
+// existe toujours (il a pu être révoqué depuis l'ouverture de session) ; sinon on
+// bascule sur la plus ancienne appartenance. Retourne null si l'utilisateur
+// n'appartient à aucun cabinet — enforceOrgMembership lèvera alors FORBIDDEN.
+async function resolveOrganizationId(
+    userId: string,
+    activeOrganizationId: string | null,
+) {
+    if (activeOrganizationId) {
+        const activeMembership = await db.query.member.findFirst({
+            where: and(
+                eq(member.userId, userId),
+                eq(member.organizationId, activeOrganizationId),
+            ),
+            columns: { organizationId: true },
+        })
+        if (activeMembership) {
+            return activeMembership.organizationId
+        }
+    }
+
+    // Plus ancienne appartenance d'abord : résultat déterministe quand le membre
+    // appartient à plusieurs cabinets.
+    const oldestMembership = await db.query.member.findFirst({
+        where: eq(member.userId, userId),
+        orderBy: asc(member.createdAt),
+        columns: { organizationId: true },
+    })
+    return oldestMembership?.organizationId ?? null
 }

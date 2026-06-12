@@ -36,6 +36,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 import type { AppRouter } from "@/server/routers/_app"
@@ -69,6 +70,7 @@ const activeItemClasses =
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { isMobile, state } = useSidebar()
   const currentMember = trpc.member.current.useQuery()
   const isOwner = currentMember.data?.role === "owner"
 
@@ -95,7 +97,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="justify-center px-3">
-        <Logo className="group-data-[collapsible=icon]:hidden" />
+        <Logo iconOnly={isMobile || state === "collapsed"} />
       </SidebarHeader>
 
       <SidebarContent>
