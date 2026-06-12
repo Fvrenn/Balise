@@ -1,0 +1,197 @@
+"use client"
+
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import {
+  Building2,
+  ChevronsUpDown,
+  ClipboardCheck,
+  LayoutDashboard,
+  LogOut,
+  Settings,
+  User,
+  Users,
+  type LucideIcon,
+} from "lucide-react"
+
+import type { inferRouterOutputs } from "@trpc/server"
+import { authClient } from "@/lib/auth-client"
+import { trpc } from "@/trpc/react"
+import { Logo } from "@/components/logo"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar"
+
+import type { AppRouter } from "@/server/routers/_app"
+
+type CurrentMember = inferRouterOutputs<AppRouter>["member"]["current"]
+
+type NavItem = {
+  title: string
+  href: string
+  icon: LucideIcon
+}
+
+const mainNav: NavItem[] = [
+  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+]
+
+const workNav: NavItem[] = [
+  { title: "Clients", href: "/clients", icon: Building2 },
+  { title: "Tous les audits", href: "/audits", icon: ClipboardCheck },
+]
+
+// Réservé aux owners du cabinet.
+const cabinetNav: NavItem[] = [
+  { title: "Équipe", href: "/settings/team", icon: Users },
+  { title: "Paramètres", href: "/settings/cabinet", icon: Settings },
+]
+
+// L'item actif : fond bleuté sombre, texte blanc, icône amber.
+const activeItemClasses =
+  "[&_svg]:size-5 data-active:bg-sidebar-accent data-active:text-white data-active:[&_svg]:text-sidebar-primary data-active:hover:bg-sidebar-accent data-active:hover:text-white"
+
+export function AppSidebar() {
+  const pathname = usePathname()
+  const currentMember = trpc.member.current.useQuery()
+  const isOwner = currentMember.data?.role === "owner"
+
+  function isActive(href: string) {
+    return pathname === href || pathname.startsWith(`${href}/`)
+  }
+
+  function renderNav(items: NavItem[]) {
+    return items.map((item) => (
+      <SidebarMenuItem key={item.href}>
+        <SidebarMenuButton
+          isActive={isActive(item.href)}
+          tooltip={item.title}
+          className={activeItemClasses}
+          render={<Link href={item.href} />}
+        >
+          <item.icon />
+          <span>{item.title}</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    ))
+  }
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="justify-center px-3">
+        <Logo className="group-data-[collapsible=icon]:hidden" />
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarMenu>{renderNav(mainNav)}</SidebarMenu>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Travail</SidebarGroupLabel>
+          <SidebarMenu>{renderNav(workNav)}</SidebarMenu>
+        </SidebarGroup>
+
+        {isOwner && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Cabinet</SidebarGroupLabel>
+            <SidebarMenu>{renderNav(cabinetNav)}</SidebarMenu>
+          </SidebarGroup>
+        )}
+      </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <UserMenu member={currentMember.data} />
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
+  )
+}
+
+function UserMenu({ member }: { member: CurrentMember | undefined }) {
+  const router = useRouter()
+
+  async function handleSignOut() {
+    await authClient.signOut()
+    router.push("/login")
+    router.refresh()
+  }
+
+  const displayName = member?.name ?? "Chargement…"
+  const email = member?.email ?? ""
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <SidebarMenuButton
+            size="lg"
+            className="data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground"
+          />
+        }
+      >
+        <Avatar className="size-8 rounded-lg">
+          {member?.image ? (
+            <AvatarImage src={member.image} alt={displayName} />
+          ) : null}
+          <AvatarFallback className="rounded-lg bg-sidebar-primary/15 text-sidebar-primary">
+            {getInitials(member?.name)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="grid flex-1 text-left text-sm leading-tight">
+          <span className="truncate font-medium">{displayName}</span>
+          <span className="truncate text-xs text-sidebar-foreground/70">
+            {email}
+          </span>
+        </div>
+        <ChevronsUpDown className="ml-auto size-4 text-sidebar-foreground/70" />
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent side="top" align="end" sideOffset={8} className="min-w-56">
+        <div className="px-1.5 py-1.5">
+          <p className="truncate text-sm font-medium text-foreground">
+            {displayName}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">{email}</p>
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem render={<Link href="/settings/profile" />}>
+          <User />
+          Profil
+        </DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
+          <LogOut />
+          Se déconnecter
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function getInitials(name: string | undefined) {
+  if (!name) return "?"
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return "?"
+  const first = parts[0].charAt(0)
+  const last = parts.length > 1 ? parts[parts.length - 1].charAt(0) : ""
+  return (first + last).toUpperCase()
+}

@@ -2,7 +2,7 @@ import { config } from 'dotenv'
 config({ path: '.env.local' })
 
 import { db } from '@/db'
-import { rgaaCriteria } from '@/db/schema'
+import { member, organization, rgaaCriteria } from '@/db/schema'
 import { auth } from '@/lib/auth'
 
 /**
@@ -897,7 +897,7 @@ export const rgaaCriteriaSeed = [
 
 
 async function createAdminUser() {
-    await auth.api.signUpEmail({
+    const { user } = await auth.api.signUpEmail({
         body: {
             email: 'admin@balise.app',
             password: 'changeme123',
@@ -905,6 +905,31 @@ async function createAdminUser() {
         },
     })
     console.log('✅ Utilisateur admin créé : admin@balise.app')
+
+    // Rattache l'admin à un cabinet. Le membership suffit à l'isolation tRPC :
+    // le contexte résout l'organizationId via la première appartenance quand la
+    // session n'a pas encore d'organisation active.
+    const [cabinet] = await db
+        .insert(organization)
+        .values({
+            id: crypto.randomUUID(),
+            name: 'Trialog',
+            slug: 'trialog',
+            createdAt: new Date(),
+        })
+        .returning()
+    if (!cabinet) {
+        throw new Error('Création du cabinet Trialog échouée.')
+    }
+
+    await db.insert(member).values({
+        id: crypto.randomUUID(),
+        organizationId: cabinet.id,
+        userId: user.id,
+        role: 'owner',
+        createdAt: new Date(),
+    })
+    console.log('✅ Cabinet Trialog créé, admin rattaché en tant qu’owner')
 }
 
 export async function seedRgaaCriteria() {

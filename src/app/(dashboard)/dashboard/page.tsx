@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   const { user, session: currentSession } = session
 
   return (
-    <main>
+    <div className="mx-auto w-full max-w-5xl space-y-1 px-6 py-10">
       <h1>Informations de connexion</h1>
       <p>Nom : {user.name}</p>
       <p>E-mail : {user.email}</p>
@@ -25,7 +25,9 @@ export default async function DashboardPage() {
       <p>Identifiant de session : {currentSession.id}</p>
       <p>Session expire le : {currentSession.expiresAt.toLocaleString("fr-FR")}</p>
 
-      <LogoutButton variant="outline" />
-    </main>
+      <div className="pt-4">
+        <LogoutButton variant="outline" />
+      </div>
+    </div>
   )
 }

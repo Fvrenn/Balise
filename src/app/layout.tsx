@@ -2,6 +2,9 @@ import type { Metadata } from "next"
 import { Inter, Syne } from "next/font/google"
 import "./globals.css"
 
+import { Toaster } from "@/components/ui/sonner"
+import { TRPCReactProvider } from "@/trpc/react"
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -31,7 +34,8 @@ export default function RootLayout({
       className={`${inter.variable} ${syne.variable}`}
     >
       <body className="font-sans antialiased bg-background text-foreground">
-        {children}
+        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <Toaster />
       </body>
     </html>
   )

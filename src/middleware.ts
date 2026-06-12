@@ -17,5 +17,5 @@ export function middleware(request: NextRequest) {
 
 export const config = {
     // À ajuster aux routes réellement protégées de Balise.
-    matcher: ['/dashboard/:path*'],
+    matcher: ['/dashboard/:path*', '/clients/:path*'],
 }
