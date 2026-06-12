@@ -2,6 +2,7 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { auth } from "@/lib/auth"
+import { LogoutButton } from "@/components/logout-button"
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -23,6 +24,8 @@ export default async function DashboardPage() {
       <p>Organisation active : {currentSession.activeOrganizationId ?? "aucune"}</p>
       <p>Identifiant de session : {currentSession.id}</p>
       <p>Session expire le : {currentSession.expiresAt.toLocaleString("fr-FR")}</p>
+
+      <LogoutButton variant="outline" />
     </main>
   )
 }
