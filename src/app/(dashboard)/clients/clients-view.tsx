@@ -57,6 +57,7 @@ export function ClientsView() {
         data={filteredClients}
         isLoading={clientsQuery.isLoading}
         emptyState={hasActiveSearch ? <NoSearchResults /> : <NoClients />}
+        getRowHref={(client) => `/clients/${client.id}`}
       />
     </div>
   )

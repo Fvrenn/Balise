@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import {
   flexRender,
   getCoreRowModel,
@@ -30,6 +31,10 @@ interface DataTableProps<TData extends object> {
   isLoading?: boolean
   emptyState?: React.ReactNode
   onRowClick?: (row: TData) => void
+  // Navigation par ligne. Préférer getRowHref : un vrai lien donne le focus clavier,
+  // Ctrl/clic du milieu et « ouvrir dans un nouvel onglet ». onRowClick reste pour les
+  // actions non navigantes (rendu accessible au clavier : role link + Entrée/Espace).
+  getRowHref?: (row: TData) => string
   className?: string
 }
 
@@ -39,6 +44,7 @@ export function DataTable<TData extends object>({
   isLoading = false,
   emptyState,
   onRowClick,
+  getRowHref,
   className,
 }: DataTableProps<TData>) {
   const table = useReactTable({
@@ -48,7 +54,7 @@ export function DataTable<TData extends object>({
   })
 
   const rows = table.getRowModel().rows
-  const isRowClickable = Boolean(onRowClick)
+  const isRowInteractive = Boolean(onRowClick) || Boolean(getRowHref)
 
   return (
     <div className={cn("overflow-hidden rounded-lg border", className)}>
@@ -87,24 +93,75 @@ export function DataTable<TData extends object>({
               </TableCell>
             </TableRow>
           ) : (
-            rows.map((row) => (
-              <TableRow
-                key={row.id}
-                onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                className={cn(isRowClickable && "cursor-pointer")}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="px-3 py-4">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
+            rows.map((row) => {
+              const href = getRowHref?.(row.original)
+              // Avec getRowHref, le <Link> de la cellule principale porte la
+              // navigation (et donc le focus clavier, Ctrl/clic du milieu). Sans
+              // href, la ligne elle-même devient le contrôle : role + focus +
+              // activation Entrée/Espace.
+              const isKeyboardRow = Boolean(onRowClick) && !href
+              return (
+                <TableRow
+                  key={row.id}
+                  onClick={
+                    isKeyboardRow ? () => onRowClick?.(row.original) : undefined
+                  }
+                  onKeyDown={
+                    isKeyboardRow
+                      ? (event) =>
+                          activateRowOnKey(event, () =>
+                            onRowClick?.(row.original),
+                          )
+                      : undefined
+                  }
+                  role={isKeyboardRow ? "link" : undefined}
+                  tabIndex={isKeyboardRow ? 0 : undefined}
+                  className={cn(
+                    isRowInteractive && "cursor-pointer",
+                    href && "relative",
+                    isKeyboardRow &&
+                      "outline-none focus-visible:ring-inset focus-visible:ring-3 focus-visible:ring-ring/50",
+                  )}
+                >
+                  {row.getVisibleCells().map((cell, cellIndex) => (
+                    <TableCell key={cell.id} className="px-3 py-4">
+                      {href && cellIndex === 0 ? (
+                        // Lien étiré : l'ancre couvre toute la ligne via ::after,
+                        // tout en gardant le nom comme intitulé accessible.
+                        <Link
+                          href={href}
+                          className="rounded-md outline-none after:absolute after:inset-0 focus-visible:ring-3 focus-visible:ring-ring/50"
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </Link>
+                      ) : (
+                        flexRender(cell.column.columnDef.cell, cell.getContext())
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              )
+            })
           )}
         </TableBody>
       </Table>
     </div>
   )
+}
+
+// Entrée/Espace activent une ligne rendue comme contrôle (role="link"), à parité
+// avec le clic souris. preventDefault sur Espace empêche le scroll de page.
+function activateRowOnKey(
+  event: React.KeyboardEvent<HTMLTableRowElement>,
+  activate: () => void,
+) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault()
+    activate()
+  }
 }
 
 function DataTableSkeletonRows({ columnCount }: { columnCount: number }) {
