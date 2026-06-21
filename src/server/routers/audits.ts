@@ -1,24 +1,142 @@
-import { and, asc, desc, eq } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, sql } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import ExcelJS from 'exceljs'
 
 import { protectedProcedure, router } from '@/server/trpc'
+import type { Database } from '@/db'
 import {
     auditFindings,
     auditPages,
     audits,
+    auditStatus,
     clients,
+    findingStatus,
     member,
     pageType,
     rgaaCriteria,
     user,
 } from '@/db/schema'
+import {
+    computeComplianceRate,
+    emptyStatusCounts,
+    type FindingStatus,
+    type StatusCounts,
+    type ThemeProgress,
+} from '@/lib/rgaa'
 
 const samplePageInput = z.object({
     label: z.string().trim().min(1, 'Le libellé est obligatoire.').max(200),
     url: z.string().trim().min(1, "L'URL de la page est obligatoire.").max(2000),
     type: z.enum(pageType.enumValues),
 })
+
+// Agrège les findings d'un audit par thématique, dans l'ordre RGAA (theme 1 → 13).
+async function getThemeProgress(
+    db: Database,
+    auditId: string,
+): Promise<ThemeProgress[]> {
+    const rows = await db
+        .select({
+            themeId: rgaaCriteria.themeId,
+            themeName: rgaaCriteria.themeName,
+            status: auditFindings.status,
+        })
+        .from(auditFindings)
+        .innerJoin(rgaaCriteria, eq(auditFindings.criterionId, rgaaCriteria.id))
+        .where(eq(auditFindings.auditId, auditId))
+
+    const byTheme = new Map<number, ThemeProgress>()
+    for (const row of rows) {
+        let theme = byTheme.get(row.themeId)
+        if (!theme) {
+            theme = {
+                themeId: row.themeId,
+                themeName: row.themeName,
+                total: 0,
+                ...emptyStatusCounts(),
+            }
+            byTheme.set(row.themeId, theme)
+        }
+        theme.total += 1
+        theme[row.status] += 1
+    }
+
+    return [...byTheme.values()].sort((a, b) => a.themeId - b.themeId)
+}
+
+// Recalcule le taux de conformité mis en cache sur l'audit à partir de l'état
+// courant de ses findings, puis le persiste. Appelé après chaque modification.
+async function recomputeComplianceRate(
+    db: Database,
+    auditId: string,
+): Promise<number | null> {
+    const rows = await db
+        .select({ status: auditFindings.status, total: count() })
+        .from(auditFindings)
+        .where(eq(auditFindings.auditId, auditId))
+        .groupBy(auditFindings.status)
+
+    const counts: StatusCounts = emptyStatusCounts()
+    for (const row of rows) counts[row.status] = row.total
+
+    const complianceRate = computeComplianceRate(counts)
+    await db
+        .update(audits)
+        .set({ complianceRate, updatedAt: new Date() })
+        .where(eq(audits.id, auditId))
+
+    return complianceRate
+}
+
+// Garantit qu'un finding appartient bien à un audit du cabinet courant. Retourne
+// l'auditId associé, ou lève NOT_FOUND (pas de fuite inter-cabinets).
+async function assertFindingInOrg(
+    db: Database,
+    findingId: string,
+    organizationId: string,
+): Promise<string> {
+    const [row] = await db
+        .select({ auditId: auditFindings.auditId })
+        .from(auditFindings)
+        .innerJoin(audits, eq(auditFindings.auditId, audits.id))
+        .where(
+            and(
+                eq(auditFindings.id, findingId),
+                eq(audits.organizationId, organizationId),
+            ),
+        )
+        .limit(1)
+    if (!row) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Finding introuvable.' })
+    }
+    return row.auditId
+}
+
+// Garantit qu'un audit appartient au cabinet courant, sinon NOT_FOUND.
+async function assertAuditInOrg(
+    db: Database,
+    auditId: string,
+    organizationId: string,
+): Promise<void> {
+    const audit = await db.query.audits.findFirst({
+        where: and(
+            eq(audits.id, auditId),
+            eq(audits.organizationId, organizationId),
+        ),
+        columns: { id: true },
+    })
+    if (!audit) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Audit introuvable.' })
+    }
+}
+
+const FINDING_STATUS_LABELS: Record<FindingStatus, string> = {
+    pending: 'À traiter',
+    conforme: 'Conforme',
+    non_conforme: 'Non conforme',
+    non_applicable: 'Non applicable',
+}
 
 const createAuditInput = z.object({
     clientId: z.string().min(1),
@@ -32,6 +150,58 @@ const createAuditInput = z.object({
 })
 
 export const auditsRouter = router({
+    // Compteurs par statut pour les cartes de synthèse de la page Audits.
+    stats: protectedProcedure.query(async ({ ctx }) => {
+        const rows = await ctx.db
+            .select({
+                status: audits.status,
+                count: count(),
+            })
+            .from(audits)
+            .where(eq(audits.organizationId, ctx.organizationId))
+            .groupBy(audits.status)
+
+        let inProgress = 0
+        let pendingReview = 0
+        let completed = 0
+        for (const row of rows) {
+            if (row.status === 'in_progress') inProgress = row.count
+            else if (row.status === 'pending_review') pendingReview = row.count
+            else if (row.status === 'completed') completed = row.count
+        }
+        return { inProgress, pendingReview, completed }
+    }),
+
+    // Les audits assignés à l'utilisateur connecté, du plus récemment modifié au
+    // plus ancien. En plus des champs de `list`, chaque ligne porte le nombre de
+    // critères déjà traités sur les 106 — « traité » = tout statut sauf `pending`,
+    // exactement comme `treatedCount` côté client (cf. @/lib/rgaa). Calculé en une
+    // seule agrégation plutôt qu'un getThemeProgress par audit (qui serait N+1).
+    listMine: protectedProcedure.query(({ ctx }) => {
+        return ctx.db
+            .select({
+                id: audits.id,
+                name: audits.name,
+                siteUrl: audits.siteUrl,
+                status: audits.status,
+                complianceRate: audits.complianceRate,
+                updatedAt: audits.updatedAt,
+                clientName: clients.name,
+                treatedCount: sql<number>`coalesce(sum(case when ${auditFindings.status} <> 'pending' then 1 else 0 end), 0)::int`,
+            })
+            .from(audits)
+            .innerJoin(clients, eq(audits.clientId, clients.id))
+            .leftJoin(auditFindings, eq(auditFindings.auditId, audits.id))
+            .where(
+                and(
+                    eq(audits.organizationId, ctx.organizationId),
+                    eq(audits.assignedToId, ctx.user.id),
+                ),
+            )
+            .groupBy(audits.id, clients.name)
+            .orderBy(desc(audits.updatedAt))
+    }),
+
     // Tous les audits du cabinet, du plus récemment modifié au plus ancien, avec le
     // nom du client (toujours présent) et celui de l'auditeur assigné (facultatif).
     list: protectedProcedure.query(({ ctx }) => {
@@ -79,7 +249,221 @@ export const auditsRouter = router({
                     message: 'Audit introuvable.',
                 })
             }
+
+            // Avancement par thématique : alimente la barre de progression du header
+            // et le tableau de la vue d'ensemble.
+            const themeProgress = await getThemeProgress(ctx.db, audit.id)
+            return { ...audit, themeProgress }
+        }),
+
+    // Les 106 findings de l'audit avec leur critère RGAA, triés selon l'ordre
+    // officiel du référentiel. Base de travail de la grille des critères.
+    getFindings: protectedProcedure
+        .input(z.object({ auditId: z.string().min(1) }))
+        .query(async ({ ctx, input }) => {
+            await assertAuditInOrg(ctx.db, input.auditId, ctx.organizationId)
+
+            return ctx.db
+                .select({
+                    id: auditFindings.id,
+                    status: auditFindings.status,
+                    comment: auditFindings.comment,
+                    concernedPageIds: auditFindings.concernedPageIds,
+                    criterionId: rgaaCriteria.id,
+                    themeId: rgaaCriteria.themeId,
+                    themeName: rgaaCriteria.themeName,
+                    title: rgaaCriteria.title,
+                    sortOrder: rgaaCriteria.sortOrder,
+                })
+                .from(auditFindings)
+                .innerJoin(
+                    rgaaCriteria,
+                    eq(auditFindings.criterionId, rgaaCriteria.id),
+                )
+                .where(eq(auditFindings.auditId, input.auditId))
+                .orderBy(asc(rgaaCriteria.sortOrder))
+        }),
+
+    // Met à jour un finding (statut, commentaire, pages concernées) puis recalcule
+    // le taux de conformité de l'audit. Cœur de la sauvegarde automatique.
+    updateFinding: protectedProcedure
+        .input(
+            z.object({
+                findingId: z.string().min(1),
+                status: z.enum(findingStatus.enumValues),
+                comment: z.string().max(5000).nullish(),
+                concernedPageIds: z.array(z.string().min(1)).nullish(),
+            }),
+        )
+        .mutation(async ({ ctx, input }) => {
+            const auditId = await assertFindingInOrg(
+                ctx.db,
+                input.findingId,
+                ctx.organizationId,
+            )
+
+            const [finding] = await ctx.db
+                .update(auditFindings)
+                .set({
+                    status: input.status,
+                    comment: input.comment ?? null,
+                    concernedPageIds: input.concernedPageIds ?? null,
+                    updatedBy: ctx.user.id,
+                    updatedAt: new Date(),
+                })
+                .where(eq(auditFindings.id, input.findingId))
+                .returning()
+
+            const complianceRate = await recomputeComplianceRate(ctx.db, auditId)
+            return { finding, complianceRate }
+        }),
+
+    // Passe toute une thématique en « non applicable » en un geste, puis recalcule
+    // le taux de conformité.
+    markThemeNA: protectedProcedure
+        .input(
+            z.object({
+                auditId: z.string().min(1),
+                themeId: z.number().int().min(1).max(13),
+            }),
+        )
+        .mutation(async ({ ctx, input }) => {
+            await assertAuditInOrg(ctx.db, input.auditId, ctx.organizationId)
+
+            const criteria = await ctx.db
+                .select({ id: rgaaCriteria.id })
+                .from(rgaaCriteria)
+                .where(eq(rgaaCriteria.themeId, input.themeId))
+            const criterionIds = criteria.map((criterion) => criterion.id)
+            if (criterionIds.length === 0) {
+                throw new TRPCError({
+                    code: 'BAD_REQUEST',
+                    message: 'Thématique RGAA inconnue.',
+                })
+            }
+
+            await ctx.db
+                .update(auditFindings)
+                .set({
+                    status: 'non_applicable',
+                    updatedBy: ctx.user.id,
+                    updatedAt: new Date(),
+                })
+                .where(
+                    and(
+                        eq(auditFindings.auditId, input.auditId),
+                        inArray(auditFindings.criterionId, criterionIds),
+                    ),
+                )
+
+            const complianceRate = await recomputeComplianceRate(
+                ctx.db,
+                input.auditId,
+            )
+            return { complianceRate }
+        }),
+
+    // Bascule le statut de l'audit (in_progress ↔ completed). Marqueur visuel
+    // uniquement : l'audit reste modifiable dans les deux états.
+    updateAuditStatus: protectedProcedure
+        .input(
+            z.object({
+                auditId: z.string().min(1),
+                status: z.enum(auditStatus.enumValues),
+            }),
+        )
+        .mutation(async ({ ctx, input }) => {
+            await assertAuditInOrg(ctx.db, input.auditId, ctx.organizationId)
+
+            const [audit] = await ctx.db
+                .update(audits)
+                .set({ status: input.status, updatedAt: new Date() })
+                .where(eq(audits.id, input.auditId))
+                .returning()
             return audit
+        }),
+
+    // Génère la grille d'audit RGAA au format Excel (ExcelJS) et la renvoie encodée
+    // en base64 — le client la reconvertit en fichier téléchargeable.
+    exportExcel: protectedProcedure
+        .input(z.object({ auditId: z.string().min(1) }))
+        .mutation(async ({ ctx, input }) => {
+            const audit = await ctx.db.query.audits.findFirst({
+                where: and(
+                    eq(audits.id, input.auditId),
+                    eq(audits.organizationId, ctx.organizationId),
+                ),
+                with: {
+                    client: { columns: { name: true } },
+                    pages: { columns: { id: true, label: true } },
+                },
+            })
+            if (!audit) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: 'Audit introuvable.',
+                })
+            }
+
+            const findings = await ctx.db
+                .select({
+                    criterionId: rgaaCriteria.id,
+                    themeName: rgaaCriteria.themeName,
+                    title: rgaaCriteria.title,
+                    status: auditFindings.status,
+                    comment: auditFindings.comment,
+                    concernedPageIds: auditFindings.concernedPageIds,
+                })
+                .from(auditFindings)
+                .innerJoin(
+                    rgaaCriteria,
+                    eq(auditFindings.criterionId, rgaaCriteria.id),
+                )
+                .where(eq(auditFindings.auditId, input.auditId))
+                .orderBy(asc(rgaaCriteria.sortOrder))
+
+            const pageLabelById = new Map(
+                audit.pages.map((page) => [page.id, page.label]),
+            )
+
+            const workbook = new ExcelJS.Workbook()
+            const sheet = workbook.addWorksheet('Grille RGAA')
+            sheet.columns = [
+                { header: 'N° critère', key: 'criterion', width: 12 },
+                { header: 'Thématique', key: 'theme', width: 28 },
+                { header: 'Intitulé', key: 'title', width: 70 },
+                { header: 'Statut', key: 'status', width: 16 },
+                { header: 'Commentaire', key: 'comment', width: 50 },
+                { header: 'Pages concernées', key: 'pages', width: 40 },
+            ]
+            sheet.getRow(1).font = { bold: true }
+
+            for (const finding of findings) {
+                const concernedLabels = (finding.concernedPageIds ?? [])
+                    .map((pageId) => pageLabelById.get(pageId))
+                    .filter((label): label is string => Boolean(label))
+                sheet.addRow({
+                    criterion: finding.criterionId,
+                    theme: finding.themeName,
+                    title: finding.title,
+                    status: FINDING_STATUS_LABELS[finding.status],
+                    comment: finding.comment ?? '',
+                    pages: concernedLabels.join(', '),
+                })
+            }
+
+            const buffer = await workbook.xlsx.writeBuffer()
+            const base64 = Buffer.from(buffer).toString('base64')
+            const date = new Date().toISOString().slice(0, 10)
+            const slug = audit.client.name
+                .normalize('NFD')
+                .replace(/[̀-ͯ]/g, '')
+                .replace(/[^a-zA-Z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+            return {
+                base64,
+                filename: `Audit-RGAA-${slug || 'client'}-${date}.xlsx`,
+            }
         }),
 
     // Membres du cabinet courant pour alimenter le sélecteur « Assigné à ».

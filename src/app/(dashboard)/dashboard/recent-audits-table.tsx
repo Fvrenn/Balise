@@ -1,5 +1,11 @@
 "use client"
 
+import Link from "next/link"
+import { Plus } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+import { buttonVariants } from "@/components/ui/button"
+import { DataTable } from "@/components/ui/data-table"
 import {
   createComplianceCell,
   createDateCell,
@@ -7,13 +13,11 @@ import {
 } from "@/components/ui/data-table-cells"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import type { inferRouterOutputs } from "@trpc/server"
-import type { AppRouter } from "@/server/routers/_app"
+import type { RouterOutputs } from "@/trpc/types"
 
-export type AuditListRow =
-  inferRouterOutputs<AppRouter>["audits"]["list"][number]
+type RecentAudit = RouterOutputs["audits"]["list"][number]
 
-export const auditColumns: ColumnDef<AuditListRow>[] = [
+const recentAuditColumns: ColumnDef<RecentAudit>[] = [
   {
     accessorKey: "name",
     header: "Nom de l'audit",
@@ -26,13 +30,6 @@ export const auditColumns: ColumnDef<AuditListRow>[] = [
     header: "Client",
     cell: ({ row }) => (
       <span className="text-muted-foreground">{row.original.clientName}</span>
-    ),
-  },
-  {
-    accessorKey: "siteUrl",
-    header: "Site audité",
-    cell: ({ row }) => (
-      <span className="text-muted-foreground">{row.original.siteUrl}</span>
     ),
   },
   {
@@ -67,3 +64,28 @@ export const auditColumns: ColumnDef<AuditListRow>[] = [
     ),
   },
 ]
+
+export function RecentAuditsTable({ audits }: { audits: RecentAudit[] }) {
+  return (
+    <DataTable
+      columns={recentAuditColumns}
+      data={audits}
+      getRowHref={(audit) => `/audits/${audit.id}`}
+      emptyState={<NoAudits />}
+    />
+  )
+}
+
+function NoAudits() {
+  return (
+    <div className="flex flex-col items-center gap-3 py-12 text-center">
+      <p className="text-sm font-medium text-foreground">
+        Aucun audit pour le moment
+      </p>
+      <Link href="/audits/new" className={cn(buttonVariants())}>
+        <Plus />
+        Créer le premier audit
+      </Link>
+    </div>
+  )
+}

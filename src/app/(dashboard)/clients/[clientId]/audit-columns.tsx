@@ -8,7 +8,7 @@ import {
   createComplianceCell,
   createDateCell,
   createStatusBadge,
-} from "@/components/ui/data-table"
+} from "@/components/ui/data-table-cells"
 
 import type { ColumnDef } from "@tanstack/react-table"
 import type { inferRouterOutputs } from "@trpc/server"

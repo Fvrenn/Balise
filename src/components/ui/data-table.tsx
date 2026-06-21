@@ -8,11 +8,7 @@ import {
   useReactTable,
   type ColumnDef,
 } from "@tanstack/react-table"
-import { format, formatDistanceToNow } from "date-fns"
-import { fr } from "date-fns/locale"
-
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
@@ -180,50 +176,6 @@ function DataTableSkeletonRows({ columnCount }: { columnCount: number }) {
   )
 }
 
-// ---------------------------------------------------------------------------
-// Helpers de colonnes — rendus de cellule récurrents dans Balise.
-// ---------------------------------------------------------------------------
-
-type BadgeVariant = React.ComponentProps<typeof Badge>["variant"]
-
-const AUDIT_STATUS_BADGES: Record<
-  string,
-  { label: string; variant: BadgeVariant }
-> = {
-  in_progress: { label: "En cours", variant: "warning" },
-  completed: { label: "Terminé", variant: "success" },
-}
-
-export function createStatusBadge(status: string): React.ReactNode {
-  const badge = AUDIT_STATUS_BADGES[status] ?? {
-    label: status,
-    variant: "secondary" as const,
-  }
-  return <Badge variant={badge.variant}>{badge.label}</Badge>
-}
-
-export function createComplianceCell(rate: number | null): React.ReactNode {
-  if (rate === null) return <span className="text-muted-foreground">—</span>
-
-  const value = Math.round(rate)
-  return (
-    <span className={cn("font-semibold tabular-nums", complianceTone(value))}>
-      {value}%
-    </span>
-  )
-}
-
-function complianceTone(rate: number): string {
-  if (rate < 50) return "text-destructive"
-  if (rate <= 75) return "text-primary"
-  return "text-success"
-}
-
-export function createDateCell(date: Date | null): React.ReactNode {
-  if (date === null) return <span className="text-muted-foreground">—</span>
-  return <span className="tabular-nums">{format(date, "dd/MM/yyyy")}</span>
-}
-
-export function createRelativeDate(date: Date): React.ReactNode {
-  return formatDistanceToNow(date, { addSuffix: true, locale: fr })
-}
+// Les rendus de cellule (createStatusBadge, createComplianceCell, createDateCell…)
+// vivent dans un module à part, sans « use client », pour rester invocables aussi
+// bien côté serveur que client : @/components/ui/data-table-cells.

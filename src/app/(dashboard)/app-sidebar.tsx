@@ -6,6 +6,7 @@ import {
   Building2,
   ChevronsUpDown,
   ClipboardCheck,
+  FileText,
   LayoutDashboard,
   LogOut,
   Settings,
@@ -64,6 +65,10 @@ const cabinetNav: NavItem[] = [
   { title: "Paramètres", href: "/settings/cabinet", icon: Settings },
 ]
 
+// Nombre d'audits en cours affichés en raccourci sous « Audits ». Au-delà,
+// l'auditeur passe par la page liste.
+const MAX_SIDEBAR_AUDITS = 4
+
 // L'item actif : fond bleuté sombre, texte blanc, icône amber.
 const activeItemClasses =
   "[&_svg]:size-5 data-active:bg-sidebar-accent data-active:text-white data-active:[&_svg]:text-sidebar-primary data-active:hover:bg-sidebar-accent data-active:hover:text-white"
@@ -73,6 +78,11 @@ export function AppSidebar() {
   const { isMobile, state } = useSidebar()
   const currentMember = trpc.member.current.useQuery()
   const isOwner = currentMember.data?.role === "owner"
+
+  const myAudits = trpc.audits.listMine.useQuery()
+  const auditsInProgress = (myAudits.data ?? [])
+    .filter((audit) => audit.status === "in_progress")
+    .slice(0, MAX_SIDEBAR_AUDITS)
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(`${href}/`)
@@ -109,6 +119,27 @@ export function AppSidebar() {
           <SidebarGroupLabel>Travail</SidebarGroupLabel>
           <SidebarMenu>{renderNav(workNav)}</SidebarMenu>
         </SidebarGroup>
+
+        {auditsInProgress.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>En cours</SidebarGroupLabel>
+            <SidebarMenu>
+              {auditsInProgress.map((audit) => (
+                <SidebarMenuItem key={audit.id}>
+                  <SidebarMenuButton
+                    isActive={isActive(`/audits/${audit.id}`)}
+                    tooltip={audit.name}
+                    className={activeItemClasses}
+                    render={<Link href={`/audits/${audit.id}/criteria`} />}
+                  >
+                    <FileText />
+                    <span className="truncate">{audit.name}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
 
         {isOwner && (
           <SidebarGroup>

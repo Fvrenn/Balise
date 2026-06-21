@@ -58,7 +58,7 @@ export const clientsRouter = router({
         let auditsInProgress = 0
         for (const row of auditsByStatus) {
             if (row.status === 'completed') auditsCompleted = row.count
-            else if (row.status === 'in_progress') auditsInProgress = row.count
+            else if (row.status === 'in_progress' || row.status === 'pending_review') auditsInProgress += row.count
         }
 
         return {

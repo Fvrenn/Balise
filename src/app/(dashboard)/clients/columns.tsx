@@ -3,7 +3,7 @@
 import { formatDistanceToNow } from "date-fns"
 import { fr } from "date-fns/locale"
 
-import { createDateCell } from "@/components/ui/data-table"
+import { createDateCell } from "@/components/ui/data-table-cells"
 
 import type { ColumnDef } from "@tanstack/react-table"
 import type { inferRouterOutputs } from "@trpc/server"

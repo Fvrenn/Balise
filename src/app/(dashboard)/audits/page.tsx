@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { HeaderActions } from "@/components/header-slot"
 
+import { AuditsStats } from "./audits-stats"
 import { AuditsTable } from "./audits-table"
 
 export default async function AuditsPage() {
@@ -41,6 +42,8 @@ export default async function AuditsPage() {
           Tous les audits réalisés par votre cabinet.
         </p>
       </div>
+
+      <AuditsStats />
 
       <AuditsTable audits={audits} />
     </div>

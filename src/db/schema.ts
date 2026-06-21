@@ -14,6 +14,7 @@ import { relations } from 'drizzle-orm'
 
 export const auditStatus = pgEnum('audit_status', [
     'in_progress',
+    'pending_review',
     'completed',
 ])
 
