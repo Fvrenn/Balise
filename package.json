@@ -11,7 +11,8 @@
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx --env-file .env.local src/db/seed.ts"
+    "db:seed": "tsx --env-file .env.local src/db/seed.ts",
+    "create:owner": "tsx --env-file .env.local src/db/create-owner.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1064.0",

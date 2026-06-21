@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { trpc } from "@/trpc/react"
 import { cn } from "@/lib/utils"
+import { fileToBase64 } from "@/lib/file"
 import { Button } from "@/components/ui/button"
 
 const ACCEPTED_TYPES = [
@@ -20,23 +21,6 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024
 
 function isAcceptedType(type: string): type is LogoContentType {
   return (ACCEPTED_TYPES as readonly string[]).includes(type)
-}
-
-// Lit un fichier et renvoie sa charge utile base64 (sans le préfixe data:).
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result !== "string") {
-        reject(new Error("Lecture du fichier impossible."))
-        return
-      }
-      resolve(reader.result.split(",")[1] ?? "")
-    }
-    reader.onerror = () =>
-      reject(reader.error ?? new Error("Lecture du fichier impossible."))
-    reader.readAsDataURL(file)
-  })
 }
 
 export function LogoField({ logo }: { logo: string | null }) {

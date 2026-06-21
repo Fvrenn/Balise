@@ -41,6 +41,10 @@ export const user = pgTable('user', {
     email: text('email').notNull().unique(),
     emailVerified: boolean('email_verified').notNull(),
     image: text('image'),
+    // Statut plateforme Balise, indépendant du système organization de Better
+    // Auth. true = admin Balise (hors cabinet) ; jamais positionné via l'UI,
+    // uniquement en base ou par script. Voir CLAUDE.md « Modèle d'accès ».
+    isAdmin: boolean('is_admin').notNull().default(false),
     createdAt: timestamp('created_at').notNull(),
     updatedAt: timestamp('updated_at').notNull(),
 })

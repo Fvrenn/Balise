@@ -22,6 +22,60 @@ SaaS d'audit d'accessibilité RGAA 4.1.2 pour cabinets de conseil.
 | Package manager | pnpm |
 
 
+## Modèle d'accès
+
+Balise n'a **aucune inscription publique** : pas de page de signup, on ne crée
+jamais de compte librement. Trois niveaux d'accès, chacun avec son mode de
+création bien défini.
+
+| Niveau | Statut / rattachement | Créé par |
+|--------|-----------------------|----------|
+| **Admin Balise** | `user.isAdmin = true`, aucune organisation | Accès direct à la base (ou script dédié) |
+| **Owner** | Membre `owner` d'un cabinet | L'Admin, via `pnpm create:owner` |
+| **Auditeur** | Membre `auditor` d'un cabinet | Invitation d'un Owner depuis `/settings/team` |
+
+### Admin Balise
+
+Statut **plateforme**, indépendant du système organization de Better Auth :
+porté par la colonne `user.isAdmin` (défaut `false`), jamais positionné via
+l'interface. On le passe à `true` directement en base. L'Admin n'appartient à
+aucun cabinet et n'est donc pas soumis à la redirection d'onboarding. Pas de
+panel admin dédié pour le MVP — l'usage réel reste les scripts et l'accès base.
+
+### Owner
+
+Créé par l'Admin avec :
+
+```bash
+pnpm create:owner <email> <mot-de-passe> <nom>
+```
+
+Le script (`src/db/create-owner.ts`) crée **uniquement le compte** (via Better
+Auth, qui hash le mot de passe), **sans organisation ni membership**. À sa
+première connexion, l'Owner n'a aucun cabinet : le layout du dashboard
+(`src/app/(dashboard)/layout.tsx`) le redirige vers **`/onboarding/cabinet`**, où
+il crée son cabinet (procédure `onboarding.createCabinet`). Tant que cette étape
+n'est pas faite, aucune autre page applicative n'est accessible. La page
+d'onboarding vit dans le route group `(auth)`, hors du layout dashboard, pour
+éviter toute boucle de redirection.
+
+### Auditeur
+
+Créé **exclusivement par invitation** d'un Owner depuis `/settings/team`
+(`auth.api.createInvitation`). L'invité reçoit un email pointant vers
+**`/accept-invitation/[invitationId]`**, où il finalise son compte (nom + mot de
+passe) puis accepte l'invitation (`authClient.organization.acceptInvitation`) :
+il est alors rattaché automatiquement au cabinet de l'inviteur avec le rôle
+`auditor`. S'il a déjà un compte, la même page propose une simple connexion.
+
+### Procédures tRPC selon le rattachement
+
+- `publicProcedure` — sans authentification.
+- `authedProcedure` — connecté, **sans** cabinet requis (ex. `onboarding.createCabinet`, appelé justement avant d'avoir une organisation).
+- `protectedProcedure` — connecté **et** rattaché à un cabinet (barrière multi-tenant).
+- `ownerProcedure` — `protectedProcedure` + rôle `owner` du cabinet courant.
+
+
 ## Conventions de code
 
 Ces règles s'appliquent à tout le code du projet. Elles priment sur les habitudes par défaut.

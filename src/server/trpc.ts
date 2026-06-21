@@ -46,6 +46,27 @@ const enforceOrgMembership = t.middleware(({ ctx, next }) => {
 
 export const protectedProcedure = t.procedure.use(enforceOrgMembership)
 
+// Exige une session valide mais PAS de rattachement à un cabinet : pour les
+// procédures que l'utilisateur appelle justement avant d'avoir une organisation,
+// typiquement la création de son cabinet à l'onboarding (un Owner créé par l'Admin
+// n'a encore aucune appartenance). Voir CLAUDE.md « Modèle d'accès ».
+const enforceAuth = t.middleware(({ ctx, next }) => {
+    if (!ctx.user || !ctx.session) {
+        throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Vous devez être connecté.',
+        })
+    }
+    return next({
+        ctx: {
+            user: ctx.user,
+            session: ctx.session,
+        },
+    })
+})
+
+export const authedProcedure = t.procedure.use(enforceAuth)
+
 // Restreint aux owners du cabinet courant : invitations, gestion des membres et
 // paramètres du cabinet s'appuient dessus plutôt que de répéter la vérification.
 // S'enchaîne après protectedProcedure, donc `user` et `organizationId` sont déjà

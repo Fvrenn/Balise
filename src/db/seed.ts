@@ -919,18 +919,6 @@ type SeedCabinet = {
 
 const seedCabinets: SeedCabinet[] = [
     {
-        name: 'Trialog',
-        slug: 'trialog',
-        members: [
-            {
-                email: 'admin@balise.app',
-                password: 'changeme123',
-                name: 'Admin Balise',
-                role: 'owner',
-            },
-        ],
-    },
-    {
         name: 'Access42',
         slug: 'access42',
         members: [
@@ -1052,6 +1040,45 @@ async function seedUsersAndCabinets() {
     }
 }
 
+async function createPlatformAdmin() {
+    const email = 'admin@balise.app'
+
+    const existing = await db.query.user.findFirst({
+        where: eq(user.email, email),
+        columns: { id: true, isAdmin: true },
+    })
+
+    if (existing) {
+        if (!existing.isAdmin) {
+            await db.update(user).set({ isAdmin: true }).where(eq(user.id, existing.id))
+        }
+        console.log(`  ↺ Admin plateforme déjà présent : ${email}`)
+        return
+    }
+
+    const { user: created } = await auth.api.signUpEmail({
+        body: { email, password: 'changeme123', name: 'Admin Balise' },
+    })
+    await db.update(user).set({ isAdmin: true }).where(eq(user.id, created.id))
+    console.log(`✅ Admin plateforme créé (sans cabinet) : ${email}`)
+}
+
+async function createTestOwner() {
+    const email = 'owner@trialog.test'
+
+    const userId = await ensureUser({
+        email,
+        password: 'changeme123',
+        name: 'Owner Trialog',
+        role: 'owner',
+    })
+
+    const organizationId = await ensureCabinet({ name: 'Trialog', slug: 'trialog', members: [] })
+    await ensureMembership({ organizationId, userId, role: 'owner' })
+
+    console.log(`✅ Owner de test créé, cabinet Trialog : ${email}`)
+}
+
 export async function seedRgaaCriteria() {
     await db
         .insert(rgaaCriteria)
@@ -1066,6 +1093,8 @@ export async function seedRgaaCriteria() {
 // Permet de lancer directement : pnpm tsx src/db/seed.ts
 if (require.main === module) {
     seedRgaaCriteria()
+        .then(() => createPlatformAdmin())
+        .then(() => createTestOwner())
         .then(() => seedUsersAndCabinets())
         .then(() => process.exit(0))
         .catch((err) => {
