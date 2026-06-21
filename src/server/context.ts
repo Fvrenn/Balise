@@ -18,7 +18,10 @@ export async function createTRPCContext(opts: { headers: Headers }) {
         ? await resolveOrganizationId(user.id, activeOrganizationId)
         : null
 
-    return { db, user, session, organizationId }
+    // Les en-têtes de la requête sont conservés pour les procédures qui rappellent
+    // l'API Better Auth côté serveur (ex. team.invite → auth.api.createInvitation),
+    // laquelle a besoin de la session pour identifier l'appelant.
+    return { db, user, session, organizationId, headers: opts.headers }
 }
 
 // Résout le cabinet courant en garantissant l'appartenance à l'instant T.

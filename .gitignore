@@ -20,6 +20,9 @@
 # production
 /build
 
+# fichiers téléversés en dev local (stockage disque, cf. src/lib/storage.ts)
+/uploads
+
 # misc
 .DS_Store
 *.pem

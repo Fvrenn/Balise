@@ -1,6 +1,8 @@
 import { initTRPC, TRPCError } from '@trpc/server'
+import { and, eq } from 'drizzle-orm'
 import superjson from 'superjson'
 
+import { member } from '@/db/schema'
 import type { createTRPCContext } from '@/server/context'
 
 type Context = Awaited<ReturnType<typeof createTRPCContext>>
@@ -43,3 +45,24 @@ const enforceOrgMembership = t.middleware(({ ctx, next }) => {
 })
 
 export const protectedProcedure = t.procedure.use(enforceOrgMembership)
+
+// Restreint aux owners du cabinet courant : invitations, gestion des membres et
+// paramètres du cabinet s'appuient dessus plutôt que de répéter la vérification.
+// S'enchaîne après protectedProcedure, donc `user` et `organizationId` sont déjà
+// garantis non-nuls.
+export const ownerProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+    const membership = await ctx.db.query.member.findFirst({
+        where: and(
+            eq(member.userId, ctx.user.id),
+            eq(member.organizationId, ctx.organizationId),
+        ),
+        columns: { role: true },
+    })
+    if (membership?.role !== 'owner') {
+        throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Réservé aux administrateurs du cabinet.',
+        })
+    }
+    return next()
+})

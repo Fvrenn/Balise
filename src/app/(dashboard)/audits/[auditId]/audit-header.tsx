@@ -160,8 +160,8 @@ export function AuditHeader({
             <ExportExcelButton auditId={auditId} size="sm" />
 
             <Button
-              type="button"
               size="sm"
+              nativeButton={false}
               render={<Link href={`/audits/${auditId}/reports`} />}
             >
               <FileDown />

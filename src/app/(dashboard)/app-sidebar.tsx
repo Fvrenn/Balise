@@ -17,6 +17,7 @@ import {
 
 import type { inferRouterOutputs } from "@trpc/server"
 import { authClient } from "@/lib/auth-client"
+import { getInitials } from "@/lib/utils"
 import { trpc } from "@/trpc/react"
 import { Logo } from "@/components/logo"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -218,13 +219,4 @@ function UserMenu({ member }: { member: CurrentMember | undefined }) {
       </DropdownMenuContent>
     </DropdownMenu>
   )
-}
-
-function getInitials(name: string | undefined) {
-  if (!name) return "?"
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return "?"
-  const first = parts[0].charAt(0)
-  const last = parts.length > 1 ? parts[parts.length - 1].charAt(0) : ""
-  return (first + last).toUpperCase()
 }
