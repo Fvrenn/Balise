@@ -20,6 +20,7 @@ import {
 import {
     computeComplianceRate,
     emptyStatusCounts,
+    sumStatusCounts,
     type FindingStatus,
     type StatusCounts,
     type ThemeProgress,
@@ -253,7 +254,14 @@ export const auditsRouter = router({
             // Avancement par thématique : alimente la barre de progression du header
             // et le tableau de la vue d'ensemble.
             const themeProgress = await getThemeProgress(ctx.db, audit.id)
-            return { ...audit, themeProgress }
+            // Agrégat global de l'audit (somme des thématiques) : compteurs par
+            // statut + total des critères. Calculé côté serveur pour ne pas dupliquer
+            // la logique d'agrégation dans chaque consommateur.
+            const summary = {
+                ...sumStatusCounts(themeProgress),
+                total: themeProgress.reduce((sum, theme) => sum + theme.total, 0),
+            }
+            return { ...audit, themeProgress, summary }
         }),
 
     // Les 106 findings de l'audit avec leur critère RGAA, triés selon l'ordre

@@ -16,6 +16,8 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-    // À ajuster aux routes réellement protégées de Balise.
-    matcher: ['/dashboard/:path*', '/clients/:path*'],
+    // À ajuster aux routes réellement protégées de Balise. /admin compris : la vraie
+    // garde isAdmin est dans son layout, le middleware n'ajoute que la vérif
+    // optimiste de présence du cookie (redirection rapide si non connecté).
+    matcher: ['/dashboard/:path*', '/clients/:path*', '/admin/:path*'],
 }

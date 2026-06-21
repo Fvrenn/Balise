@@ -29,23 +29,27 @@ export default async function DashboardLayout({
     redirect("/login")
   }
 
-  // Modèle d'accès Balise (cf. CLAUDE.md « Modèle d'accès ») : un Owner créé par
-  // l'Admin n'a aucun cabinet tant qu'il n'a pas fait son onboarding. On le force
-  // alors vers /onboarding/cabinet. L'Admin plateforme (isAdmin) n'a pas de
-  // cabinet par nature et passe sans redirection. La page d'onboarding vit hors de
-  // ce layout (route group (auth)), donc aucune boucle de redirection.
-  const [account, membership] = await Promise.all([
-    db.query.user.findFirst({
-      where: eq(user.id, session.user.id),
-      columns: { isAdmin: true },
-    }),
-    db.query.member.findFirst({
-      where: eq(member.userId, session.user.id),
-      columns: { id: true },
-    }),
-  ])
+  // Ordre de redirection (cf. CLAUDE.md « Modèle d'accès ») :
+  // 1. Admin plateforme → espace /admin, AVANT toute donnée liée à une organisation.
+  //    L'Admin n'a aucun cabinet : il ne doit jamais atteindre les pages du dashboard,
+  //    qui déclenchent des procédures filtrées par organizationId (FORBIDDEN sinon).
+  //    isAdmin se lit en base, la session Better Auth ne portant pas ce champ.
+  const account = await db.query.user.findFirst({
+    where: eq(user.id, session.user.id),
+    columns: { isAdmin: true },
+  })
+  if (account?.isAdmin) {
+    redirect("/admin")
+  }
 
-  if (!account?.isAdmin && !membership) {
+  // 2. Owner créé par l'Admin, pas encore de cabinet → onboarding obligatoire. La
+  //    page d'onboarding vit hors de ce layout (route group (auth)), donc aucune
+  //    boucle de redirection.
+  const membership = await db.query.member.findFirst({
+    where: eq(member.userId, session.user.id),
+    columns: { id: true },
+  })
+  if (!membership) {
     redirect("/onboarding/cabinet")
   }
 

@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 
 import { protectedProcedure, router } from '@/server/trpc'
-import { member, organization } from '@/db/schema'
+import { member } from '@/db/schema'
 
 type OrganizationRole = 'owner' | 'auditor'
 

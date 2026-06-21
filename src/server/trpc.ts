@@ -2,7 +2,7 @@ import { initTRPC, TRPCError } from '@trpc/server'
 import { and, eq } from 'drizzle-orm'
 import superjson from 'superjson'
 
-import { member } from '@/db/schema'
+import { member, user } from '@/db/schema'
 import type { createTRPCContext } from '@/server/context'
 
 type Context = Awaited<ReturnType<typeof createTRPCContext>>
@@ -66,6 +66,26 @@ const enforceAuth = t.middleware(({ ctx, next }) => {
 })
 
 export const authedProcedure = t.procedure.use(enforceAuth)
+
+// Statut plateforme Balise (user.isAdmin), hors du système organization : un Admin
+// n'appartient à aucun cabinet et n'a donc pas d'organizationId — il ne doit jamais
+// passer par protectedProcedure (qui lèverait FORBIDDEN). S'enchaîne après
+// enforceAuth, donc `user` est garanti non-nul. isAdmin se vérifie EN BASE et non
+// sur ctx.user : ce champ ne fait pas partie du schéma Better Auth, la session ne le
+// porte pas. Voir CLAUDE.md « Modèle d'accès » → Admin Balise.
+export const adminProcedure = authedProcedure.use(async ({ ctx, next }) => {
+    const account = await ctx.db.query.user.findFirst({
+        where: eq(user.id, ctx.user.id),
+        columns: { isAdmin: true },
+    })
+    if (!account?.isAdmin) {
+        throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Réservé aux administrateurs Balise.',
+        })
+    }
+    return next()
+})
 
 // Restreint aux owners du cabinet courant : invitations, gestion des membres et
 // paramètres du cabinet s'appuient dessus plutôt que de répéter la vérification.

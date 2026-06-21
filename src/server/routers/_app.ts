@@ -1,4 +1,5 @@
 import { router } from '@/server/trpc'
+import { adminRouter } from '@/server/routers/admin'
 import { auditsRouter } from '@/server/routers/audits'
 import { cabinetRouter } from '@/server/routers/cabinet'
 import { clientsRouter } from '@/server/routers/clients'
@@ -8,6 +9,7 @@ import { teamRouter } from '@/server/routers/team'
 import { userRouter } from '@/server/routers/user'
 
 export const appRouter = router({
+    admin: adminRouter,
     audits: auditsRouter,
     cabinet: cabinetRouter,
     clients: clientsRouter,
