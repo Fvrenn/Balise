@@ -11,6 +11,7 @@ import {
   createDateCell,
   createStatusBadge,
 } from "@/components/ui/data-table-cells"
+import { AssigneeBadges } from "@/components/audit/assignee-badges"
 
 import type { ColumnDef } from "@tanstack/react-table"
 import type { RouterOutputs } from "@/trpc/types"
@@ -35,10 +36,7 @@ const recentAuditColumns: ColumnDef<RecentAudit>[] = [
   {
     id: "assignedTo",
     header: "Assigné à",
-    cell: ({ row }) =>
-      row.original.assignedToName ?? (
-        <span className="text-muted-foreground">—</span>
-      ),
+    cell: ({ row }) => <AssigneeBadges assignees={row.original.assignees} />,
   },
   {
     accessorKey: "status",

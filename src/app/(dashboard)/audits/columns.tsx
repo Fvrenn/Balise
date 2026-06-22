@@ -6,6 +6,8 @@ import {
   createStatusBadge,
 } from "@/components/ui/data-table-cells"
 
+import { AssigneesCell } from "./assignees-cell"
+
 import type { ColumnDef } from "@tanstack/react-table"
 import type { inferRouterOutputs } from "@trpc/server"
 import type { AppRouter } from "@/server/routers/_app"
@@ -38,10 +40,12 @@ export const auditColumns: ColumnDef<AuditListRow>[] = [
   {
     id: "assignedTo",
     header: "Assigné à",
-    cell: ({ row }) =>
-      row.original.assignedToName ?? (
-        <span className="text-muted-foreground">—</span>
-      ),
+    cell: ({ row }) => (
+      <AssigneesCell
+        auditId={row.original.id}
+        assignees={row.original.assignees}
+      />
+    ),
   },
   {
     accessorKey: "status",

@@ -6,6 +6,7 @@ import ExcelJS from 'exceljs'
 import { protectedProcedure, router } from '@/server/trpc'
 import type { Database } from '@/db'
 import {
+    auditAssignees,
     auditFindings,
     auditPages,
     audits,
@@ -17,6 +18,12 @@ import {
     rgaaCriteria,
     user,
 } from '@/db/schema'
+import {
+    assertMembersInOrg,
+    buildAssigneeRows,
+    getAssigneesByAudit,
+    type AssigneeSummary,
+} from '@/server/assignees'
 import {
     computeComplianceRate,
     emptyStatusCounts,
@@ -143,11 +150,20 @@ const createAuditInput = z.object({
     clientId: z.string().min(1),
     name: z.string().trim().min(1, "Le nom de l'audit est obligatoire.").max(200),
     siteUrl: z.string().trim().min(1, "L'URL du site est obligatoire.").max(2000),
-    // Optionnel : par défaut l'audit revient à l'auteur (voir create).
-    assignedToId: z.string().min(1).optional(),
+    // Au moins un auditeur assigné ; le formulaire pré-coche l'utilisateur courant.
+    assigneeIds: z
+        .array(z.string().min(1))
+        .min(1, 'Assignez au moins un auditeur.'),
     contactName: z.string().trim().max(200).optional(),
     contactEmail: z.string().trim().email('Email du référent invalide.').optional(),
     pages: z.array(samplePageInput).min(1, 'Ajoutez au moins une page à auditer.'),
+})
+
+const updateAssigneesInput = z.object({
+    auditId: z.string().min(1),
+    assigneeIds: z
+        .array(z.string().min(1))
+        .min(1, 'Au moins un auditeur doit rester assigné.'),
 })
 
 export const auditsRouter = router({
@@ -179,6 +195,12 @@ export const auditsRouter = router({
     // exactement comme `treatedCount` côté client (cf. @/lib/rgaa). Calculé en une
     // seule agrégation plutôt qu'un getThemeProgress par audit (qui serait N+1).
     listMine: protectedProcedure.query(({ ctx }) => {
+        // « Mes audits » = ceux dont l'utilisateur courant est l'un des assignés.
+        const myAuditIds = ctx.db
+            .select({ auditId: auditAssignees.auditId })
+            .from(auditAssignees)
+            .where(eq(auditAssignees.userId, ctx.user.id))
+
         return ctx.db
             .select({
                 id: audits.id,
@@ -196,7 +218,7 @@ export const auditsRouter = router({
             .where(
                 and(
                     eq(audits.organizationId, ctx.organizationId),
-                    eq(audits.assignedToId, ctx.user.id),
+                    inArray(audits.id, myAuditIds),
                 ),
             )
             .groupBy(audits.id, clients.name)
@@ -204,9 +226,10 @@ export const auditsRouter = router({
     }),
 
     // Tous les audits du cabinet, du plus récemment modifié au plus ancien, avec le
-    // nom du client (toujours présent) et celui de l'auditeur assigné (facultatif).
-    list: protectedProcedure.query(({ ctx }) => {
-        return ctx.db
+    // nom du client (toujours présent) et le tableau des auditeurs assignés (au moins
+    // un), trié du plus ancien assigné au plus récent.
+    list: protectedProcedure.query(async ({ ctx }) => {
+        const rows = await ctx.db
             .select({
                 id: audits.id,
                 name: audits.name,
@@ -216,13 +239,20 @@ export const auditsRouter = router({
                 createdAt: audits.createdAt,
                 updatedAt: audits.updatedAt,
                 clientName: clients.name,
-                assignedToName: user.name,
             })
             .from(audits)
             .innerJoin(clients, eq(audits.clientId, clients.id))
-            .leftJoin(user, eq(audits.assignedToId, user.id))
             .where(eq(audits.organizationId, ctx.organizationId))
             .orderBy(desc(audits.updatedAt))
+
+        const assigneesByAudit = await getAssigneesByAudit(
+            ctx.db,
+            rows.map((row) => row.id),
+        )
+        return rows.map((row) => ({
+            ...row,
+            assignees: assigneesByAudit.get(row.id) ?? [],
+        }))
     }),
 
     // Audit complet du cabinet courant avec ses pages d'échantillon (ordonnées). Le
@@ -241,6 +271,17 @@ export const auditsRouter = router({
                         orderBy: (fields, operators) => [
                             operators.asc(fields.sortOrder),
                         ],
+                    },
+                    assignees: {
+                        orderBy: (fields, operators) => [
+                            operators.asc(fields.assignedAt),
+                            operators.asc(fields.id),
+                        ],
+                        with: {
+                            user: {
+                                columns: { id: true, name: true, email: true },
+                            },
+                        },
                     },
                 },
             })
@@ -261,7 +302,14 @@ export const auditsRouter = router({
                 ...sumStatusCounts(themeProgress),
                 total: themeProgress.reduce((sum, theme) => sum + theme.total, 0),
             }
-            return { ...audit, themeProgress, summary }
+            const assignees: AssigneeSummary[] = audit.assignees.map(
+                (assignee) => ({
+                    userId: assignee.user.id,
+                    name: assignee.user.name,
+                    email: assignee.user.email,
+                }),
+            )
+            return { ...audit, assignees, themeProgress, summary }
         }),
 
     // Les 106 findings de l'audit avec leur critère RGAA, triés selon l'ordre
@@ -507,24 +555,10 @@ export const auditsRouter = router({
                 })
             }
 
-            // À défaut, l'audit revient à l'auteur. Un auditeur explicite doit être
-            // membre du cabinet — pas d'assignation hors cabinet.
-            const assignedToId = input.assignedToId ?? ctx.user.id
-            if (input.assignedToId && input.assignedToId !== ctx.user.id) {
-                const assignee = await ctx.db.query.member.findFirst({
-                    where: and(
-                        eq(member.userId, input.assignedToId),
-                        eq(member.organizationId, ctx.organizationId),
-                    ),
-                    columns: { id: true },
-                })
-                if (!assignee) {
-                    throw new TRPCError({
-                        code: 'BAD_REQUEST',
-                        message: "L'auditeur assigné n'appartient pas au cabinet.",
-                    })
-                }
-            }
+            // Tous les auditeurs assignés doivent être membres du cabinet — pas
+            // d'assignation hors cabinet. On dédoublonne au cas où.
+            const assigneeIds = [...new Set(input.assigneeIds)]
+            await assertMembersInOrg(ctx.db, ctx.organizationId, assigneeIds)
 
             // Tout ou rien : l'audit, ses pages d'échantillon et un finding « pending »
             // par critère RGAA sont créés dans une seule transaction. Si une étape
@@ -536,7 +570,6 @@ export const auditsRouter = router({
                     .values({
                         organizationId: ctx.organizationId,
                         clientId: input.clientId,
-                        assignedToId,
                         name: input.name,
                         siteUrl: input.siteUrl,
                         contactName: input.contactName || null,
@@ -578,7 +611,43 @@ export const auditsRouter = router({
                     })),
                 )
 
+                await tx
+                    .insert(auditAssignees)
+                    .values(buildAssigneeRows(audit.id, assigneeIds))
+
                 return audit
             })
+        }),
+
+    // Remplace entièrement la liste des assignés d'un audit (supprime les lignes
+    // existantes, recrée selon la nouvelle liste). Accessible à tout membre du
+    // cabinet : les audits sont partagés au sein du cabinet, donc réassignables par
+    // n'importe lequel de ses membres. Au moins un auditeur doit rester assigné.
+    updateAssignees: protectedProcedure
+        .input(updateAssigneesInput)
+        .mutation(async ({ ctx, input }) => {
+            await assertAuditInOrg(ctx.db, input.auditId, ctx.organizationId)
+
+            const assigneeIds = [...new Set(input.assigneeIds)]
+            await assertMembersInOrg(ctx.db, ctx.organizationId, assigneeIds)
+
+            await ctx.db.transaction(async (tx) => {
+                await tx
+                    .delete(auditAssignees)
+                    .where(eq(auditAssignees.auditId, input.auditId))
+                await tx
+                    .insert(auditAssignees)
+                    .values(buildAssigneeRows(input.auditId, assigneeIds))
+            })
+
+            // Renvoie la liste fraîche et mise en forme pour que le client reflète
+            // immédiatement le nouvel état.
+            const assigneesByAudit = await getAssigneesByAudit(ctx.db, [
+                input.auditId,
+            ])
+            return {
+                auditId: input.auditId,
+                assignees: assigneesByAudit.get(input.auditId) ?? [],
+            }
         }),
 })

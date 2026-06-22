@@ -9,6 +9,7 @@ import {
   createDateCell,
   createStatusBadge,
 } from "@/components/ui/data-table-cells"
+import { AssigneeBadges } from "@/components/audit/assignee-badges"
 
 import type { ColumnDef } from "@tanstack/react-table"
 import type { inferRouterOutputs } from "@trpc/server"
@@ -40,7 +41,7 @@ export const auditColumns: ColumnDef<ClientAudit>[] = [
   {
     id: "assignedTo",
     header: "Assigné à",
-    cell: ({ row }) => row.original.assignedTo?.name ?? <EmptyValue />,
+    cell: ({ row }) => <AssigneeBadges assignees={row.original.assignees} />,
   },
   {
     accessorKey: "status",

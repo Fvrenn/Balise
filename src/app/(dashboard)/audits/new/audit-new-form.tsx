@@ -19,6 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+import { AssigneeMultiSelect } from "./assignee-multi-select"
+
 const STEPS = ["Informations", "Pages de l'échantillon"] as const
 
 const PAGE_TYPE_OPTIONS = [
@@ -62,16 +64,20 @@ export function AuditNewForm() {
   )
   const [name, setName] = useState("")
   const [siteUrl, setSiteUrl] = useState("")
-  const [assignedToId, setAssignedToId] = useState("")
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([])
   const [contactName, setContactName] = useState("")
   const [contactEmail, setContactEmail] = useState("")
   const [pages, setPages] = useState<SamplePageRow[]>(() => [createEmptyPage()])
 
   // Par défaut, l'audit est assigné à l'utilisateur connecté dès que son id est
-  // connu — tant qu'aucun autre auditeur n'a été choisi manuellement.
+  // connu, tant qu'aucun auditeur n'a encore été sélectionné.
   useEffect(() => {
-    if (currentUserId && !assignedToId) setAssignedToId(currentUserId)
-  }, [currentUserId, assignedToId])
+    if (currentUserId) {
+      setAssigneeIds((current) =>
+        current.length === 0 ? [currentUserId] : current,
+      )
+    }
+  }, [currentUserId])
 
   const createAudit = trpc.audits.create.useMutation({
     onSuccess: (audit) => {
@@ -88,13 +94,6 @@ export function AuditNewForm() {
     value: client.id,
     label: client.name,
   }))
-  const memberOptions = (membersQuery.data ?? []).map((teamMember) => ({
-    value: teamMember.userId,
-    label:
-      teamMember.userId === currentUserId
-        ? `${teamMember.name} (moi)`
-        : teamMember.name,
-  }))
 
   const contactEmailInvalid =
     contactEmail.trim() !== "" && !isValidEmail(contactEmail.trim())
@@ -102,6 +101,7 @@ export function AuditNewForm() {
     clientId !== "" &&
     name.trim() !== "" &&
     siteUrl.trim() !== "" &&
+    assigneeIds.length > 0 &&
     !contactEmailInvalid
   const pagesValid =
     pages.length > 0 &&
@@ -126,7 +126,7 @@ export function AuditNewForm() {
       clientId,
       name: name.trim(),
       siteUrl: siteUrl.trim(),
-      assignedToId: assignedToId || undefined,
+      assigneeIds,
       contactName: contactName.trim() || undefined,
       contactEmail: contactEmail.trim() || undefined,
       pages: pages.map((page) => ({
@@ -222,30 +222,21 @@ export function AuditNewForm() {
             </div>
 
             <Field>
-              <FieldLabel htmlFor="audit-assigned">Assigné à</FieldLabel>
-              <Select
-                items={memberOptions}
-                value={assignedToId || null}
-                onValueChange={(value) => setAssignedToId(value ?? "")}
-                disabled={isSubmitting || membersQuery.isLoading}
-              >
-                <SelectTrigger id="audit-assigned">
-                  <SelectValue
-                    placeholder={
-                      membersQuery.isLoading
-                        ? "Chargement…"
-                        : "Sélectionnez un auditeur"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {memberOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FieldLabel htmlFor="audit-assigned">
+                Assigné à <RequiredMark />
+              </FieldLabel>
+              <AssigneeMultiSelect
+                id="audit-assigned"
+                members={membersQuery.data ?? []}
+                selectedIds={assigneeIds}
+                onChange={setAssigneeIds}
+                currentUserId={currentUserId}
+                disabled={isSubmitting}
+                isLoading={membersQuery.isLoading}
+              />
+              <FieldDescription>
+                Au moins un auditeur ; vous êtes assigné par défaut.
+              </FieldDescription>
             </Field>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

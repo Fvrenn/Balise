@@ -173,8 +173,6 @@ export const audits = pgTable(
         clientId: text('client_id')
             .notNull()
             .references(() => clients.id, { onDelete: 'cascade' }),
-        assignedToId: text('assigned_to_id')
-            .references(() => user.id, { onDelete: 'set null' }),
         name: text('name').notNull(),
         siteUrl: text('site_url').notNull(),
         // Référent du site pour cet audit : un client peut suivre plusieurs sites,
@@ -191,7 +189,38 @@ export const audits = pgTable(
     (t) => ({
         organizationIdx: index('audits_organization_idx').on(t.organizationId),
         clientIdx: index('audits_client_idx').on(t.clientId),
-        assignedIdx: index('audits_assigned_idx').on(t.assignedToId),
+    }),
+)
+
+// ─── Assignations d'audit ─────────────────────────────────────────────────────
+// Liaison plusieurs-à-plusieurs entre un audit et les auditeurs qui le mènent.
+// Un audit peut être confié à plusieurs membres du cabinet ; chacun n'y figure
+// qu'une fois (index unique). `assignedAt` encode l'ordre d'assignation : le plus
+// ancien est le « premier » assigné, de façon stable (cf. routeur audits).
+
+export const auditAssignees = pgTable(
+    'audit_assignees',
+    {
+        id: text('id')
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        auditId: text('audit_id')
+            .notNull()
+            .references(() => audits.id, { onDelete: 'cascade' }),
+        userId: text('user_id')
+            .notNull()
+            .references(() => user.id, { onDelete: 'cascade' }),
+        assignedAt: timestamp('assigned_at').notNull().defaultNow(),
+    },
+    (t) => ({
+        // Empêche d'assigner deux fois la même personne au même audit.
+        auditUserUnique: uniqueIndex('audit_assignees_audit_user_uidx').on(
+            t.auditId,
+            t.userId,
+        ),
+        // « Mes audits » filtre sur le userId ; le composite ci-dessus, préfixé par
+        // auditId, ne couvre pas ce filtre, d'où un index dédié.
+        userIdx: index('audit_assignees_user_idx').on(t.userId),
     }),
 )
 
@@ -280,7 +309,7 @@ export const userRelations = relations(user, ({ many }) => ({
     sessions: many(session),
     accounts: many(account),
     memberships: many(member),
-    auditsAssigned: many(audits),
+    auditAssignments: many(auditAssignees),
 }))
 
 export const organizationRelations = relations(organization, ({ many }) => ({
@@ -314,12 +343,20 @@ export const auditsRelations = relations(audits, ({ one, many }) => ({
         fields: [audits.clientId],
         references: [clients.id],
     }),
-    assignedTo: one(user, {
-        fields: [audits.assignedToId],
-        references: [user.id],
-    }),
+    assignees: many(auditAssignees),
     pages: many(auditPages),
     findings: many(auditFindings),
+}))
+
+export const auditAssigneesRelations = relations(auditAssignees, ({ one }) => ({
+    audit: one(audits, {
+        fields: [auditAssignees.auditId],
+        references: [audits.id],
+    }),
+    user: one(user, {
+        fields: [auditAssignees.userId],
+        references: [user.id],
+    }),
 }))
 
 export const auditPagesRelations = relations(auditPages, ({ one }) => ({
@@ -357,6 +394,8 @@ export type Client = typeof clients.$inferSelect
 export type NewClient = typeof clients.$inferInsert
 export type Audit = typeof audits.$inferSelect
 export type NewAudit = typeof audits.$inferInsert
+export type AuditAssignee = typeof auditAssignees.$inferSelect
+export type NewAuditAssignee = typeof auditAssignees.$inferInsert
 export type AuditPage = typeof auditPages.$inferSelect
 export type NewAuditPage = typeof auditPages.$inferInsert
 export type RgaaCriterion = typeof rgaaCriteria.$inferSelect
