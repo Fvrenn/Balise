@@ -15,7 +15,6 @@ import type { AuditDetail } from "@/trpc/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { SegmentedBar } from "@/components/audit/segmented-bar"
-import { ExportExcelButton } from "@/components/audit/export-excel-button"
 import {
   STATUS_BG_CLASS,
   STATUS_LEGEND_LABELS,
@@ -156,8 +155,6 @@ export function AuditHeader({
               <span className="size-2 rounded-full bg-success" aria-hidden />
               Enregistré
             </span>
-
-            <ExportExcelButton auditId={auditId} size="sm" />
 
             <Button
               size="sm"
