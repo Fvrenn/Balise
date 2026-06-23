@@ -1,0 +1,54 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: TypeScript
+        run: pnpm tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build check
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+          BETTER_AUTH_SECRET: "ci-placeholder-secret-longue-chaine"
+          BETTER_AUTH_URL: "http://localhost:3000"
+          DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
+          REDIS_URL: "redis://localhost:6379"
+
+      - name: Deploy sur VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/balise/app
+            git fetch --tags
+            git checkout ${{ github.ref_name }}
+            docker compose -f docker-compose.prod.yml build --no-cache
+            docker compose -f docker-compose.prod.yml up -d
+            DATABASE_URL="postgresql://balise:E764A6F1B3@localhost:5432/balise" pnpm exec tsx src/db/seed.ts
+            docker image prune -f
+            echo "✅ Déploiement ${{ github.ref_name }} terminé"
