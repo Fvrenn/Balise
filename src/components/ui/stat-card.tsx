@@ -6,10 +6,15 @@ interface StatCardProps {
   label: string
   value: number | undefined
   icon: LucideIcon
-  isLoading: boolean
+  isLoading?: boolean
 }
 
-export function StatCard({ label, value, icon: Icon, isLoading }: StatCardProps) {
+export function StatCard({
+  label,
+  value,
+  icon: Icon,
+  isLoading = false,
+}: StatCardProps) {
   return (
     <div className="rounded-lg border border-border bg-surface p-5">
       <div className="flex items-center justify-between gap-2">

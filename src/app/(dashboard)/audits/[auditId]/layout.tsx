@@ -1,9 +1,8 @@
-import { notFound } from "next/navigation"
-import { TRPCError } from "@trpc/server"
+import { Suspense } from "react"
 
-import { getServerApi } from "@/trpc/server"
-import { handleServerError } from "@/lib/server-utils"
-import { AuditHeader } from "./audit-header"
+import { AuditHeaderSkeleton } from "@/components/ui/skeletons"
+
+import { AuditHeaderSection } from "./audit-header-section"
 
 export default async function AuditLayout({
   params,
@@ -14,22 +13,11 @@ export default async function AuditLayout({
 }) {
   const { auditId } = await params
 
-  const api = await getServerApi()
-  const [audit, currentMember] = await Promise.all([
-    api.audits.getById({ id: auditId }).catch((error: unknown) => {
-      if (error instanceof TRPCError && error.code === "NOT_FOUND") notFound()
-      return handleServerError(error)
-    }),
-    api.member.current(),
-  ])
-
   return (
     <div className="flex min-h-full flex-col">
-      <AuditHeader
-        auditId={auditId}
-        organizationName={currentMember.organizationName}
-        initialAudit={audit}
-      />
+      <Suspense fallback={<AuditHeaderSkeleton />}>
+        <AuditHeaderSection auditId={auditId} />
+      </Suspense>
       <div className="flex-1">{children}</div>
     </div>
   )

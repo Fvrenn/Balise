@@ -14,6 +14,15 @@ export default async function AuditsPage() {
   const api = await getServerApi()
   const audits = await api.audits.list().catch(handleServerError)
 
+  // Les cartes de synthèse se déduisent de la liste déjà chargée (chaque ligne
+  // porte son statut) — inutile d'appeler `audits.stats` en plus.
+  const stats = {
+    inProgress: audits.filter((audit) => audit.status === "in_progress").length,
+    pendingReview: audits.filter((audit) => audit.status === "pending_review")
+      .length,
+    completed: audits.filter((audit) => audit.status === "completed").length,
+  }
+
   return (
     <div className="mx-12 space-y-6 px-6 py-10">
       <HeaderActions>
@@ -32,7 +41,11 @@ export default async function AuditsPage() {
         </p>
       </div>
 
-      <AuditsStats />
+      <AuditsStats
+        inProgress={stats.inProgress}
+        pendingReview={stats.pendingReview}
+        completed={stats.completed}
+      />
 
       <AuditsTable audits={audits} />
     </div>

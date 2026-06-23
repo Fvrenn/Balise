@@ -19,7 +19,7 @@ import type { AppRouter } from "@/server/routers/_app"
 export type ClientAudit =
   inferRouterOutputs<AppRouter>["clients"]["getById"]["audits"][number]
 
-export const auditColumns: ColumnDef<ClientAudit>[] = [
+export const clientAuditColumns: ColumnDef<ClientAudit>[] = [
   createAuditNameColumn<ClientAudit>(),
   {
     accessorKey: "siteUrl",

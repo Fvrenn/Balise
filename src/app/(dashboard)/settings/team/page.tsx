@@ -9,7 +9,14 @@ export default async function TeamPage() {
   const member = await api.member.current().catch(handleServerError)
 
   // Gestion d'équipe réservée aux owners — les auditeurs repartent au dashboard.
+  // On ne charge les listes qu'après ce garde, pour ne pas les fetcher au profit
+  // d'un auditeur qui sera de toute façon redirigé.
   assertOwner(member)
+
+  const [members, invitations] = await Promise.all([
+    api.team.list(),
+    api.team.listInvitations(),
+  ]).catch(handleServerError)
 
   return (
     <div className="mx-12 space-y-8 px-6 py-10">
@@ -25,7 +32,11 @@ export default async function TeamPage() {
         <InviteMemberDialog />
       </div>
 
-      <TeamContent currentUserId={member.id} />
+      <TeamContent
+        currentUserId={member.id}
+        initialMembers={members}
+        initialInvitations={invitations}
+      />
     </div>
   )
 }

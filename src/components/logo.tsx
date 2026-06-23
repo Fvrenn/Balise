@@ -8,20 +8,11 @@ interface LogoProps {
 export function Logo({ className, iconOnly }: LogoProps) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <span
-        className="font-heading font-bold leading-none text-secondary-foreground"
-        style={{
-          backgroundColor: "var(--primary)",
-          padding: "10px 5px",
-          borderRadius: "10px",
-          fontSize: "0.7rem",
-          letterSpacing: "-0.02em",
-        }}
-      >
+      <span className="rounded-[10px] bg-primary px-[5px] py-[10px] font-heading text-[0.7rem] font-bold leading-none tracking-[-0.02em] text-secondary-foreground">
         {"<B/>"}
       </span>
       {!iconOnly && (
-        <span className="font-heading text-xl font-extrabold text-white">
+        <span className="font-heading text-xl font-extrabold text-sidebar-foreground">
           balise
         </span>
       )}

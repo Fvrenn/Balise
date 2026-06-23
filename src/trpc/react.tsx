@@ -12,6 +12,13 @@ import type { AppRouter } from "@/server/routers/_app"
 // composants client.
 export const trpc = createTRPCReact<AppRouter>()
 
+// Durée pendant laquelle une donnée semée côté serveur via `initialData` reste
+// considérée fraîche. Sans ce staleTime, le défaut de TanStack Query (0) refetch
+// au montage et fait réapparaître dans Network l'appel qu'on vient justement de
+// remonter côté serveur. Les mutations qui appellent `invalidate()` refetchent
+// malgré ce délai : la réactivité aux changements est préservée.
+export const SERVER_DATA_STALE_TIME = 60_000
+
 function getBaseUrl() {
   if (typeof window !== "undefined") return ""
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`

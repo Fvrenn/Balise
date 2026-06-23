@@ -18,7 +18,7 @@ import {
 import type { inferRouterOutputs } from "@trpc/server"
 import { authClient } from "@/lib/auth-client"
 import { getInitials } from "@/lib/utils"
-import { trpc } from "@/trpc/react"
+import { SERVER_DATA_STALE_TIME, trpc } from "@/trpc/react"
 import { Logo } from "@/components/logo"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -72,13 +72,23 @@ const MAX_SIDEBAR_AUDITS = 4
 
 // L'item actif : fond bleuté sombre, texte blanc, icône amber.
 const activeItemClasses =
-  "[&_svg]:size-5 data-active:bg-sidebar-accent data-active:text-white data-active:[&_svg]:text-sidebar-primary data-active:hover:bg-sidebar-accent data-active:hover:text-white"
+  "[&_svg]:size-5 data-active:bg-sidebar-accent data-active:text-sidebar-foreground data-active:[&_svg]:text-sidebar-primary data-active:hover:bg-sidebar-accent data-active:hover:text-sidebar-foreground"
 
-export function AppSidebar() {
+export function AppSidebar({
+  initialMember,
+}: {
+  initialMember: CurrentMember
+}) {
   const pathname = usePathname()
   const { isMobile, state } = useSidebar()
-  const currentMember = trpc.member.current.useQuery()
-  const isOwner = currentMember.data?.role === "owner"
+  // Semé par le layout serveur (plus de « Chargement… » au montage) ; la requête
+  // est conservée pour que la mise à jour du profil (qui invalide member.current)
+  // rafraîchisse le nom affiché ici.
+  const currentMember = trpc.member.current.useQuery(undefined, {
+    initialData: initialMember,
+    staleTime: SERVER_DATA_STALE_TIME,
+  })
+  const isOwner = currentMember.data.role === "owner"
 
   const myAudits = trpc.audits.listMine.useQuery()
   const auditsInProgress = (myAudits.data ?? [])
@@ -161,7 +171,7 @@ export function AppSidebar() {
   )
 }
 
-function UserMenu({ member }: { member: CurrentMember | undefined }) {
+function UserMenu({ member }: { member: CurrentMember }) {
   const router = useRouter()
 
   async function handleSignOut() {
@@ -170,8 +180,8 @@ function UserMenu({ member }: { member: CurrentMember | undefined }) {
     router.refresh()
   }
 
-  const displayName = member?.name ?? "Chargement…"
-  const email = member?.email ?? ""
+  const displayName = member.name
+  const email = member.email
 
   return (
     <DropdownMenu>
@@ -184,11 +194,11 @@ function UserMenu({ member }: { member: CurrentMember | undefined }) {
         }
       >
         <Avatar className="size-8 rounded-lg">
-          {member?.image ? (
+          {member.image ? (
             <AvatarImage src={member.image} alt={displayName} />
           ) : null}
           <AvatarFallback className="rounded-lg bg-sidebar-primary/15 text-sidebar-primary">
-            {getInitials(member?.name)}
+            {getInitials(member.name)}
           </AvatarFallback>
         </Avatar>
         <div className="grid flex-1 text-left text-sm leading-tight">

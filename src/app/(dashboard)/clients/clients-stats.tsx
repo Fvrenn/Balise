@@ -1,34 +1,26 @@
-"use client"
-
 import { Building2, CircleCheck, Clock } from "lucide-react"
 
-import { trpc } from "@/trpc/react"
 import { StatCard } from "@/components/ui/stat-card"
 
-export function ClientsStats() {
-  const statsQuery = trpc.clients.stats.useQuery()
-  const stats = statsQuery.data
-  const isLoading = statsQuery.isLoading
+import type { RouterOutputs } from "@/trpc/types"
 
+export function ClientsStats({
+  stats,
+}: {
+  stats: RouterOutputs["clients"]["stats"]
+}) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <StatCard
-        label="Clients"
-        value={stats?.clientCount}
-        icon={Building2}
-        isLoading={isLoading}
-      />
+      <StatCard label="Clients" value={stats.clientCount} icon={Building2} />
       <StatCard
         label="Audits réalisés"
-        value={stats?.auditsCompleted}
+        value={stats.auditsCompleted}
         icon={CircleCheck}
-        isLoading={isLoading}
       />
       <StatCard
         label="Audits en cours"
-        value={stats?.auditsInProgress}
+        value={stats.auditsInProgress}
         icon={Clock}
-        isLoading={isLoading}
       />
     </div>
   )

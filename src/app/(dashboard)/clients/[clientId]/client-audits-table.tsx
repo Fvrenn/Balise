@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 
-import { auditColumns, type ClientAudit } from "./audit-columns"
+import { clientAuditColumns, type ClientAudit } from "./audit-columns"
 
 interface ClientAuditsTableProps {
   audits: ClientAudit[]
@@ -17,7 +17,7 @@ interface ClientAuditsTableProps {
 export function ClientAuditsTable({ audits, clientId }: ClientAuditsTableProps) {
   return (
     <DataTable
-      columns={auditColumns}
+      columns={clientAuditColumns}
       data={audits}
       emptyState={<NoAudits clientId={clientId} />}
     />

@@ -4,8 +4,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ChevronRight } from "lucide-react"
 
-import { trpc } from "@/trpc/react"
-
 // Libellés lisibles pour les segments d'URL connus de l'espace applicatif.
 const SEGMENT_LABELS: Record<string, string> = {
   dashboard: "Tableau de bord",
@@ -23,11 +21,13 @@ function labelFor(segment: string) {
   )
 }
 
-export function Breadcrumbs() {
+export function Breadcrumbs({
+  organizationName,
+}: {
+  organizationName: string | null
+}) {
   const pathname = usePathname()
   const segments = pathname.split("/").filter(Boolean)
-  const currentMember = trpc.member.current.useQuery()
-  const organizationName = currentMember.data?.organizationName
 
   if (segments.length === 0) return null
 
@@ -43,11 +43,10 @@ export function Breadcrumbs() {
   // Segments de l'URL
   segments.forEach((segment, index) => {
     const href = `/${segments.slice(0, index + 1).join("/")}`
-    const isLast = index === segments.length - 1
-    items.push({ label: labelFor(segment), href, isLast: isLast && !false })
+    items.push({ label: labelFor(segment), href, isLast: false })
   })
 
-  // Recalcule isLast correctement
+  // Seul le dernier item (cabinet ou segment) est marqué comme courant.
   items.forEach((item, i) => {
     item.isLast = i === items.length - 1
   })

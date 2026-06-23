@@ -37,14 +37,9 @@ type TeamMember = RouterOutputs["team"]["list"][number]
 interface MembersTableProps {
   members: TeamMember[]
   currentUserId: string
-  isLoading: boolean
 }
 
-export function MembersTable({
-  members,
-  currentUserId,
-  isLoading,
-}: MembersTableProps) {
+export function MembersTable({ members, currentUserId }: MembersTableProps) {
   const columns = useMemo<ColumnDef<TeamMember>[]>(
     () => [
       {
@@ -108,7 +103,7 @@ export function MembersTable({
     [currentUserId],
   )
 
-  return <DataTable columns={columns} data={members} isLoading={isLoading} />
+  return <DataTable columns={columns} data={members} />
 }
 
 function RoleBadge({ role }: { role: string }) {

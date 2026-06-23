@@ -1,10 +1,6 @@
-"use client"
-
-import { useState } from "react"
 import Link from "next/link"
 import { FileSpreadsheet, FileText } from "lucide-react"
 
-import { trpc } from "@/trpc/react"
 import { cn } from "@/lib/utils"
 import {
   computeComplianceRate,
@@ -15,28 +11,20 @@ import type { AuditDetail } from "@/trpc/types"
 import { SegmentedBar } from "@/components/audit/segmented-bar"
 import { StatusDonut } from "@/components/audit/status-donut"
 import { ExportExcelButton } from "@/components/audit/export-excel-button"
-import { ThemeSidebar } from "@/components/audit/theme-sidebar"
 import {
   STATUS_BG_CLASS,
   STATUS_LABELS,
   STATUS_SEGMENTS,
 } from "@/components/audit/status-config"
 
+import { ThemeSidebarClient } from "./theme-sidebar-client"
+
 interface OverviewContentProps {
   auditId: string
-  initialAudit: AuditDetail
+  audit: AuditDetail
 }
 
-export function OverviewContent({
-  auditId,
-  initialAudit,
-}: OverviewContentProps) {
-  const { data: audit } = trpc.audits.getById.useQuery(
-    { id: auditId },
-    { initialData: initialAudit },
-  )
-  const [activeThemeId, setActiveThemeId] = useState<number | null>(null)
-
+export function OverviewContent({ auditId, audit }: OverviewContentProps) {
   const totals = sumStatusCounts(audit.themeProgress)
   const complianceRate = computeComplianceRate(totals)
   const applicableTested = totals.conforme + totals.non_conforme
@@ -44,12 +32,7 @@ export function OverviewContent({
   return (
     <div className="flex gap-6 px-6 py-6">
       <aside className="sticky top-4 hidden self-start lg:block">
-        <ThemeSidebar
-          themes={audit.themeProgress}
-          totals={totals}
-          activeThemeId={activeThemeId}
-          onSelect={setActiveThemeId}
-        />
+        <ThemeSidebarClient themes={audit.themeProgress} totals={totals} />
       </aside>
 
       <div className="min-w-0 flex-1 space-y-6">
