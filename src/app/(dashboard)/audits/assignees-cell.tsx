@@ -7,7 +7,7 @@ import { toast } from "sonner"
 
 import { trpc } from "@/trpc/react"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+import { AssigneeSelect } from "@/components/ui/assignee-select"
 import {
   HoverCard,
   HoverCardContent,
@@ -29,7 +29,7 @@ interface AssigneesCellProps {
   assignees: AssigneeSummary[]
 }
 
-const MIN_ASSIGNEES_MESSAGE = "Au moins une personne doit rester assignée."
+const MIN_ASSIGNEES_MESSAGE = "Au moins un auditeur doit rester assigné."
 
 // Cellule « Assigné à » du tableau des audits. Les badges déclenchent au survol une
 // carte récapitulative (HoverCard) et, au clic, un popover d'édition où l'on coche
@@ -77,20 +77,6 @@ export function AssigneesCell({ auditId, assignees }: AssigneesCellProps) {
     }
   }
 
-  function toggle(userId: string, checked: boolean) {
-    if (!checked) {
-      if (selectedIds.length <= 1) {
-        toast.error(MIN_ASSIGNEES_MESSAGE)
-        return
-      }
-      setSelectedIds((current) => current.filter((id) => id !== userId))
-      return
-    }
-    setSelectedIds((current) =>
-      current.includes(userId) ? current : [...current, userId],
-    )
-  }
-
   function save() {
     if (selectedIds.length === 0) {
       toast.error(MIN_ASSIGNEES_MESSAGE)
@@ -129,37 +115,21 @@ export function AssigneesCell({ auditId, assignees }: AssigneesCellProps) {
           <p className="px-3 pt-2.5 pb-1.5 text-xs font-medium text-muted-foreground">
             Assigner à
           </p>
-          <div className="max-h-64 overflow-y-auto p-1">
-            {membersQuery.isLoading ? (
+          {membersQuery.isLoading ? (
+            <div className="max-h-64 overflow-y-auto p-1">
               <p className="px-2 py-1.5 text-sm text-muted-foreground">
                 Chargement…
               </p>
-            ) : (
-              members.map((member) => {
-                const checked = selectedIds.includes(member.userId)
-                return (
-                  <label
-                    key={member.userId}
-                    className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-accent"
-                  >
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={(value) => toggle(member.userId, value)}
-                      disabled={updateAssignees.isPending}
-                    />
-                    <span className="flex flex-col leading-tight">
-                      <span className="text-sm text-foreground">
-                        {member.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {member.email}
-                      </span>
-                    </span>
-                  </label>
-                )
-              })
-            )}
-          </div>
+            </div>
+          ) : (
+            <AssigneeSelect
+              className="p-1"
+              members={members}
+              value={selectedIds}
+              onChange={setSelectedIds}
+              disabled={updateAssignees.isPending}
+            />
+          )}
           <div className="border-t border-border p-1.5">
             <Button
               size="sm"

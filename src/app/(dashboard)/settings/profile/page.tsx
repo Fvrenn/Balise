@@ -1,9 +1,8 @@
-import { redirect } from "next/navigation"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import { TRPCError } from "@trpc/server"
 
 import { getServerApi } from "@/trpc/server"
+import { handleServerError } from "@/lib/server-utils"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -13,16 +12,7 @@ import { PasswordForm } from "./password-form"
 
 export default async function ProfilePage() {
   const api = await getServerApi()
-  const profile = await api.user.getProfile().catch((error: unknown) => {
-    // Pas de session → UNAUTHORIZED ; session sans cabinet → FORBIDDEN.
-    if (
-      error instanceof TRPCError &&
-      (error.code === "FORBIDDEN" || error.code === "UNAUTHORIZED")
-    ) {
-      redirect("/login")
-    }
-    throw error
-  })
+  const profile = await api.user.getProfile().catch(handleServerError)
 
   return (
     <div className="mx-12 space-y-8 px-6 py-10">

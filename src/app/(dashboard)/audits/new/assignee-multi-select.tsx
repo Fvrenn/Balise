@@ -1,15 +1,14 @@
 "use client"
 
 import { ChevronsUpDown } from "lucide-react"
-import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { AssigneeSelect } from "@/components/ui/assignee-select"
 
 interface MemberOption {
   userId: string
@@ -26,8 +25,6 @@ interface AssigneeMultiSelectProps {
   disabled?: boolean
   isLoading?: boolean
 }
-
-const MIN_ASSIGNEES_MESSAGE = "Au moins un auditeur doit rester assigné."
 
 // Sélecteur multiple d'auditeurs : un popover de cases à cocher. Au moins un auditeur
 // doit rester coché — on bloque la dernière décoche avec un message. Le libellé du
@@ -59,20 +56,6 @@ export function AssigneeMultiSelect({
     return `${selected.length} auditeurs sélectionnés`
   }
 
-  function toggle(userId: string, checked: boolean) {
-    if (!checked) {
-      if (selectedIds.length <= 1) {
-        toast.error(MIN_ASSIGNEES_MESSAGE)
-        return
-      }
-      onChange(selectedIds.filter((selectedId) => selectedId !== userId))
-      return
-    }
-    onChange(
-      selectedIds.includes(userId) ? selectedIds : [...selectedIds, userId],
-    )
-  }
-
   return (
     <Popover>
       <PopoverTrigger
@@ -101,28 +84,13 @@ export function AssigneeMultiSelect({
             Aucun membre disponible.
           </p>
         ) : (
-          <div className="max-h-64 overflow-y-auto">
-            {members.map((member) => (
-              <label
-                key={member.userId}
-                className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-accent"
-              >
-                <Checkbox
-                  checked={selectedIds.includes(member.userId)}
-                  onCheckedChange={(value) => toggle(member.userId, value)}
-                  disabled={disabled}
-                />
-                <span className="flex flex-col leading-tight">
-                  <span className="text-sm text-foreground">
-                    {labelFor(member)}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {member.email}
-                  </span>
-                </span>
-              </label>
-            ))}
-          </div>
+          <AssigneeSelect
+            members={members}
+            value={selectedIds}
+            onChange={onChange}
+            currentUserId={currentUserId}
+            disabled={disabled}
+          />
         )}
       </PopoverContent>
     </Popover>

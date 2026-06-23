@@ -1,9 +1,8 @@
 import Link from "next/link"
-import { redirect } from "next/navigation"
 import { Plus } from "lucide-react"
-import { TRPCError } from "@trpc/server"
 
 import { getServerApi } from "@/trpc/server"
+import { handleServerError } from "@/lib/server-utils"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { HeaderActions } from "@/components/header-slot"
@@ -20,17 +19,7 @@ export default async function DashboardPage() {
     api.member.current(),
     api.audits.listMine(),
     api.audits.list(),
-  ]).catch((error: unknown) => {
-    // Session valide mais sans cabinet → FORBIDDEN ; pas de session → UNAUTHORIZED.
-    // On renvoie vers le login plutôt que de laisser le rendu serveur planter.
-    if (
-      error instanceof TRPCError &&
-      (error.code === "FORBIDDEN" || error.code === "UNAUTHORIZED")
-    ) {
-      redirect("/login")
-    }
-    throw error
-  })
+  ]).catch(handleServerError)
 
   const firstName = member.name.trim().split(/\s+/)[0]
   const myAuditsInProgress = myAudits.filter(

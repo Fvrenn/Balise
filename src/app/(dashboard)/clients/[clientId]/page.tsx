@@ -1,9 +1,10 @@
 import Link from "next/link"
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 import { ChevronLeft } from "lucide-react"
 import { TRPCError } from "@trpc/server"
 
 import { getServerApi } from "@/trpc/server"
+import { handleServerError } from "@/lib/server-utils"
 
 import { ClientAuditsTable } from "./client-audits-table"
 import { ClientBanner } from "./client-banner"
@@ -20,16 +21,8 @@ export default async function ClientDetailPage({
   const client = await api.clients
     .getById({ id: clientId })
     .catch((error: unknown) => {
-      if (error instanceof TRPCError) {
-        if (error.code === "NOT_FOUND") notFound()
-        // Session valide mais sans cabinet (membership révoqué) → FORBIDDEN ;
-        // pas de session → UNAUTHORIZED. Dans les deux cas on renvoie vers le
-        // login plutôt que de laisser le rendu serveur planter en 500.
-        if (error.code === "FORBIDDEN" || error.code === "UNAUTHORIZED") {
-          redirect("/login")
-        }
-      }
-      throw error
+      if (error instanceof TRPCError && error.code === "NOT_FOUND") notFound()
+      return handleServerError(error)
     })
 
   return (

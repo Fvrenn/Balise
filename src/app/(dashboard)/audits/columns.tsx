@@ -1,10 +1,11 @@
 "use client"
 
 import {
-  createComplianceCell,
-  createDateCell,
-  createStatusBadge,
-} from "@/components/ui/data-table-cells"
+  createAuditDateColumn,
+  createAuditNameColumn,
+  createAuditStatusColumn,
+  createComplianceColumn,
+} from "@/components/audit/audit-column-helpers"
 
 import { AssigneesCell } from "./assignees-cell"
 
@@ -16,13 +17,7 @@ export type AuditListRow =
   inferRouterOutputs<AppRouter>["audits"]["list"][number]
 
 export const auditColumns: ColumnDef<AuditListRow>[] = [
-  {
-    accessorKey: "name",
-    header: "Nom de l'audit",
-    cell: ({ row }) => (
-      <span className="font-semibold text-foreground">{row.original.name}</span>
-    ),
-  },
+  createAuditNameColumn<AuditListRow>(),
   {
     accessorKey: "clientName",
     header: "Client",
@@ -47,27 +42,7 @@ export const auditColumns: ColumnDef<AuditListRow>[] = [
       />
     ),
   },
-  {
-    accessorKey: "status",
-    header: "Statut",
-    cell: ({ row }) => createStatusBadge(row.original.status),
-  },
-  {
-    accessorKey: "complianceRate",
-    header: () => <div className="text-right">Taux de conformité</div>,
-    cell: ({ row }) => (
-      <div className="text-right">
-        {createComplianceCell(row.original.complianceRate)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "updatedAt",
-    header: "Dernière modification",
-    cell: ({ row }) => (
-      <span className="text-muted-foreground">
-        {createDateCell(row.original.updatedAt)}
-      </span>
-    ),
-  },
+  createAuditStatusColumn<AuditListRow>(),
+  createComplianceColumn<AuditListRow>(),
+  createAuditDateColumn<AuditListRow>("updatedAt"),
 ]

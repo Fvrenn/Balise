@@ -1,7 +1,8 @@
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 import { TRPCError } from "@trpc/server"
 
 import { getServerApi } from "@/trpc/server"
+import { handleServerError } from "@/lib/server-utils"
 import { AuditHeader } from "./audit-header"
 
 export default async function AuditLayout({
@@ -16,13 +17,8 @@ export default async function AuditLayout({
   const api = await getServerApi()
   const [audit, currentMember] = await Promise.all([
     api.audits.getById({ id: auditId }).catch((error: unknown) => {
-      if (error instanceof TRPCError) {
-        if (error.code === "NOT_FOUND") notFound()
-        if (error.code === "FORBIDDEN" || error.code === "UNAUTHORIZED") {
-          redirect("/login")
-        }
-      }
-      throw error
+      if (error instanceof TRPCError && error.code === "NOT_FOUND") notFound()
+      return handleServerError(error)
     }),
     api.member.current(),
   ])

@@ -1,28 +1,15 @@
-import { redirect } from "next/navigation"
-import { TRPCError } from "@trpc/server"
-
 import { getServerApi } from "@/trpc/server"
+import { assertOwner, handleServerError } from "@/lib/server-utils"
 
 import { InviteMemberDialog } from "./invite-member-dialog"
 import { TeamContent } from "./team-content"
 
 export default async function TeamPage() {
   const api = await getServerApi()
-  const member = await api.member.current().catch((error: unknown) => {
-    // Pas de session → UNAUTHORIZED ; session sans cabinet → FORBIDDEN.
-    if (
-      error instanceof TRPCError &&
-      (error.code === "FORBIDDEN" || error.code === "UNAUTHORIZED")
-    ) {
-      redirect("/login")
-    }
-    throw error
-  })
+  const member = await api.member.current().catch(handleServerError)
 
   // Gestion d'équipe réservée aux owners — les auditeurs repartent au dashboard.
-  if (member.role !== "owner") {
-    redirect("/dashboard")
-  }
+  assertOwner(member)
 
   return (
     <div className="mx-12 space-y-8 px-6 py-10">

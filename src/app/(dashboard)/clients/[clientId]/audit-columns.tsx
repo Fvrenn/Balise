@@ -5,10 +5,11 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import {
-  createComplianceCell,
-  createDateCell,
-  createStatusBadge,
-} from "@/components/ui/data-table-cells"
+  createAuditDateColumn,
+  createAuditNameColumn,
+  createAuditStatusColumn,
+  createComplianceColumn,
+} from "@/components/audit/audit-column-helpers"
 import { AssigneeBadges } from "@/components/audit/assignee-badges"
 
 import type { ColumnDef } from "@tanstack/react-table"
@@ -19,13 +20,7 @@ export type ClientAudit =
   inferRouterOutputs<AppRouter>["clients"]["getById"]["audits"][number]
 
 export const auditColumns: ColumnDef<ClientAudit>[] = [
-  {
-    accessorKey: "name",
-    header: "Nom de l'audit",
-    cell: ({ row }) => (
-      <span className="font-semibold text-foreground">{row.original.name}</span>
-    ),
-  },
+  createAuditNameColumn<ClientAudit>(),
   {
     accessorKey: "siteUrl",
     header: "Site audité",
@@ -43,29 +38,9 @@ export const auditColumns: ColumnDef<ClientAudit>[] = [
     header: "Assigné à",
     cell: ({ row }) => <AssigneeBadges assignees={row.original.assignees} />,
   },
-  {
-    accessorKey: "status",
-    header: "Statut",
-    cell: ({ row }) => createStatusBadge(row.original.status),
-  },
-  {
-    accessorKey: "complianceRate",
-    header: () => <div className="text-right">Taux de conformité</div>,
-    cell: ({ row }) => (
-      <div className="text-right">
-        {createComplianceCell(row.original.complianceRate)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Date",
-    cell: ({ row }) => (
-      <span className="text-muted-foreground">
-        {createDateCell(row.original.createdAt)}
-      </span>
-    ),
-  },
+  createAuditStatusColumn<ClientAudit>(),
+  createComplianceColumn<ClientAudit>(),
+  createAuditDateColumn<ClientAudit>("createdAt"),
   {
     id: "actions",
     header: () => <div className="text-right">Actions</div>,

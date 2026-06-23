@@ -1,7 +1,5 @@
-import { redirect } from "next/navigation"
-import { TRPCError } from "@trpc/server"
-
 import { getServerApi } from "@/trpc/server"
+import { assertOwner, handleServerError } from "@/lib/server-utils"
 
 import { CabinetSettings } from "./cabinet-settings"
 
@@ -10,21 +8,10 @@ export default async function CabinetSettingsPage() {
   const [member, cabinet] = await Promise.all([
     api.member.current(),
     api.cabinet.get(),
-  ]).catch((error: unknown) => {
-    // Pas de session → UNAUTHORIZED ; session sans cabinet → FORBIDDEN.
-    if (
-      error instanceof TRPCError &&
-      (error.code === "FORBIDDEN" || error.code === "UNAUTHORIZED")
-    ) {
-      redirect("/login")
-    }
-    throw error
-  })
+  ]).catch(handleServerError)
 
   // Paramètres réservés aux owners — les auditeurs repartent au dashboard.
-  if (member.role !== "owner") {
-    redirect("/dashboard")
-  }
+  assertOwner(member)
 
   return (
     <div className="mx-12 max-w-2xl space-y-8 px-6 py-10">
