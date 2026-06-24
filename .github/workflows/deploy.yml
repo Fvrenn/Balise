@@ -69,13 +69,21 @@ jobs:
 
             # Build Docker depuis le nouveau dossier
             docker compose -f "$RELEASE_DIR/docker-compose.prod.yml" \
+              --project-name balise \
               build --no-cache
+
+            # Arrêter les containers existants proprement
+            docker compose -f "$CURRENT_LINK/docker-compose.prod.yml" \
+              --project-name balise \
+              down || true
 
             # Changer le symlink de façon atomique
             ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
 
             # Relancer les containers
-            docker compose -f "$CURRENT_LINK/docker-compose.prod.yml" up -d
+            docker compose -f "$CURRENT_LINK/docker-compose.prod.yml" \
+              --project-name balise \
+              up -d
 
             # Migrations et seed
             cd "$CURRENT_LINK"
