@@ -83,6 +83,51 @@ async function sendInvitationEmail(data: {
     }
 }
 
+// Envoi de l'email de définition / réinitialisation du mot de passe via Resend.
+// Sert deux flux : la création d'un Owner par l'Admin (admin.createOwner) et la
+// page « mot de passe oublié ». Better Auth appelle ce callback depuis
+// requestPasswordReset avec un lien déjà prêt (`url`) qui, une fois suivi, redirige
+// vers /reset-password?token=… Même contrat que sendInvitationEmail : dégrade
+// proprement sans clé API (le lien est loggé en dev) et n'échoue jamais — le token
+// est déjà persisté, un email raté ne doit pas faire échouer la demande.
+async function sendResetPassword(data: {
+    user: { email: string; name?: string | null }
+    url: string
+}) {
+    const apiKey = process.env.RESEND_API_KEY
+
+    if (!apiKey) {
+        console.warn(
+            `[auth] RESEND_API_KEY absente — email de mot de passe pour ${data.user.email} non envoyé. Lien : ${data.url}`,
+        )
+        return
+    }
+
+    try {
+        const { Resend } = await import('resend')
+        const resend = new Resend(apiKey)
+        await resend.emails.send({
+            from: process.env.EMAIL_FROM ?? 'Balise <onboarding@resend.dev>',
+            to: data.user.email,
+            subject: 'Définissez votre mot de passe Balise',
+            html: `
+                <p>Bonjour,</p>
+                <p>Pour définir ou réinitialiser votre mot de passe Balise,
+                cliquez sur le lien ci-dessous. Ce lien est valable une heure.</p>
+                <p><a href="${data.url}">Définir mon mot de passe</a></p>
+                <p>Si vous n'êtes pas à l'origine de cette demande, vous pouvez
+                ignorer cet email.</p>
+            `,
+        })
+    } catch (error) {
+        // On log mais on n'interrompt pas : le token de réinitialisation reste valide.
+        console.error(
+            `[auth] Échec de l'envoi de l'email de mot de passe à ${data.user.email}.`,
+            error,
+        )
+    }
+}
+
 export const auth = betterAuth({
     database: drizzleAdapter(db, {
         provider: 'pg',
@@ -99,6 +144,10 @@ export const auth = betterAuth({
     }),
     emailAndPassword: {
         enabled: true,
+        // Active /request-password-reset : sans ce callback, Better Auth refuse la
+        // demande (RESET_PASSWORD_DISABLED). Sert /forgot-password et la création
+        // d'Owner par l'Admin.
+        sendResetPassword,
     },
     plugins: [
         // Un cabinet = une organization.

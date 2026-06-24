@@ -16,6 +16,8 @@ services:
     mem_limit: 1g
     networks:
       - balise-network
+    volumes:
+      - /home/balise/uploads:/app/uploads
 
   redis:
     image: redis:7-alpine

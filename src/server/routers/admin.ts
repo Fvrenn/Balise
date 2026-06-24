@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto'
 import { count, desc, eq } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
@@ -6,13 +5,6 @@ import { z } from 'zod'
 import { adminProcedure, router } from '@/server/trpc'
 import { auth } from '@/lib/auth'
 import { member, organization, user } from '@/db/schema'
-
-// Mot de passe temporaire de l'Owner créé depuis le panel : affiché une seule fois
-// à l'Admin, qui le transmet hors-bande. 12 octets en base64url ≈ 16 caractères,
-// bien au-dessus du minimum de 8 imposé par Better Auth.
-function generateTemporaryPassword(): string {
-    return randomBytes(12).toString('base64url')
-}
 
 export const adminRouter = router({
     // Cabinets de la plateforme avec leur nombre de membres, du plus récent au plus
@@ -31,8 +23,8 @@ export const adminRouter = router({
             .orderBy(desc(organization.createdAt))
     }),
 
-    // Crée le compte d'un Owner (isAdmin false, sans cabinet) et renvoie un mot de
-    // passe temporaire à afficher une seule fois. Même résultat que `pnpm
+    // Crée le compte d'un Owner (isAdmin false, sans cabinet) puis lui envoie un
+    // email pour qu'il définisse son mot de passe. Même résultat que `pnpm
     // create:owner` : à sa première connexion, l'Owner sera redirigé vers
     // /onboarding/cabinet pour créer son cabinet (cf. CLAUDE.md « Modèle d'accès »).
     //
@@ -40,7 +32,8 @@ export const adminRouter = router({
     // auth.api.signUpEmail : ce dernier ouvre une session pour le nouveau compte et,
     // par le plugin nextCookies, écraserait le cookie de session de l'Admin (qui se
     // retrouverait connecté en tant que l'Owner). L'adaptateur interne n'écrit qu'en
-    // base, sans toucher à la session courante.
+    // base, sans toucher à la session courante. On ne crée pas de compte credential
+    // ici : resetPassword le créera avec le mot de passe choisi par l'Owner.
     createOwner: adminProcedure
         .input(
             z.object({
@@ -66,24 +59,12 @@ export const adminRouter = router({
                 })
             }
 
-            const temporaryPassword = generateTemporaryPassword()
-
             try {
                 const authContext = await auth.$context
-                const hashedPassword =
-                    await authContext.password.hash(temporaryPassword)
-                const createdUser = await authContext.internalAdapter.createUser({
+                await authContext.internalAdapter.createUser({
                     email,
                     name: input.name,
                     emailVerified: false,
-                })
-                // Compte « credential » Better Auth : il porte le hash du mot de passe
-                // et autorise la connexion email/mot de passe.
-                await authContext.internalAdapter.linkAccount({
-                    userId: createdUser.id,
-                    providerId: 'credential',
-                    accountId: createdUser.id,
-                    password: hashedPassword,
                 })
             } catch (error) {
                 throw new TRPCError({
@@ -93,6 +74,26 @@ export const adminRouter = router({
                 })
             }
 
-            return { email, temporaryPassword }
+            // Envoie l'email « Définissez votre mot de passe » via le même flux que
+            // /forgot-password. redirectTo pointe vers la page publique de définition,
+            // où Better Auth redirige avec le token validé en query (?token=…).
+            // Appel serveur sans requête : le contrôle d'origine est ignoré.
+            try {
+                await auth.api.requestPasswordReset({
+                    body: { email, redirectTo: '/reset-password' },
+                })
+            } catch (error) {
+                // Le compte est créé mais l'email n'est pas parti : on le signale sans
+                // masquer que le compte existe désormais (l'Admin pourra relancer
+                // l'envoi via /forgot-password pour cet email).
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message:
+                        "Le compte a été créé mais l'email de définition du mot de passe n'a pas pu être envoyé.",
+                    cause: error,
+                })
+            }
+
+            return { email }
         }),
 })

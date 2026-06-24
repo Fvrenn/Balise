@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, Copy, Loader2 } from "lucide-react"
+import { Loader2, MailCheck } from "lucide-react"
 import { toast } from "sonner"
 
 import { trpc } from "@/trpc/react"
@@ -9,25 +9,19 @@ import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 
-type CreatedOwner = {
-  email: string
-  temporaryPassword: string
-}
-
 export function CreateOwnerForm() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
-  // Mot de passe temporaire affiché une seule fois après création : conservé en
-  // local jusqu'à la prochaine création, jamais renvoyé par le serveur ensuite.
-  const [createdOwner, setCreatedOwner] = useState<CreatedOwner | null>(null)
-  const [hasCopied, setHasCopied] = useState(false)
+  // Email de la dernière invitation envoyée : affiche la confirmation jusqu'à la
+  // prochaine soumission.
+  const [invitedEmail, setInvitedEmail] = useState<string | null>(null)
 
   const createOwner = trpc.admin.createOwner.useMutation({
     onSuccess: (result) => {
-      setCreatedOwner(result)
+      setInvitedEmail(result.email)
       setName("")
       setEmail("")
-      toast.success("Compte Owner créé.")
+      toast.success("Invitation envoyée.")
     },
     onError: (error) =>
       toast.error(error.message || "La création du compte a échoué."),
@@ -36,16 +30,8 @@ export function CreateOwnerForm() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (name.trim().length === 0 || email.trim().length === 0) return
-    setCreatedOwner(null)
+    setInvitedEmail(null)
     createOwner.mutate({ name: name.trim(), email: email.trim() })
-  }
-
-  async function copyPassword() {
-    if (!createdOwner) return
-    await navigator.clipboard.writeText(createdOwner.temporaryPassword)
-    setHasCopied(true)
-    toast.success("Mot de passe copié.")
-    setTimeout(() => setHasCopied(false), 2000)
   }
 
   const isSubmitting = createOwner.isPending
@@ -85,42 +71,24 @@ export function CreateOwnerForm() {
             disabled={isSubmitting}
           />
           <FieldDescription>
-            L&apos;Owner créera son cabinet via /onboarding/cabinet à sa première
-            connexion.
+            L&apos;Owner recevra un email pour définir son mot de passe, puis créera
+            son cabinet via /onboarding/cabinet à sa première connexion.
           </FieldDescription>
         </Field>
 
         <Button type="submit" disabled={!canSubmit}>
           {isSubmitting ? <Loader2 className="animate-spin" /> : null}
-          Créer le compte Owner
+          Créer et envoyer l&apos;invitation
         </Button>
       </form>
 
-      {createdOwner ? (
-        <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">
-              Compte créé pour {createdOwner.email}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Transmettez ce mot de passe temporaire de façon sécurisée — il ne
-              sera plus affiché.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground">
-              {createdOwner.temporaryPassword}
-            </code>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={copyPassword}
-              aria-label="Copier le mot de passe"
-            >
-              {hasCopied ? <Check /> : <Copy />}
-            </Button>
-          </div>
+      {invitedEmail ? (
+        <div className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+          <MailCheck className="mt-0.5 size-5 shrink-0 text-primary" />
+          <p className="text-sm text-foreground">
+            Un email a été envoyé à <strong>{invitedEmail}</strong> pour qu&apos;il
+            définisse son mot de passe.
+          </p>
         </div>
       ) : null}
     </div>
