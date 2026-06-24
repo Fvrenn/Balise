@@ -44,11 +44,49 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /home/balise/app
-            git fetch --tags
-            git checkout ${{ github.ref_name }}
-            docker compose -f docker-compose.prod.yml build --no-cache
-            docker compose -f docker-compose.prod.yml up -d
-            DATABASE_URL="postgresql://balise:E764A6F1B3@localhost:5432/balise" pnpm exec tsx src/db/seed.ts
+            set -e
+            VERSION="${{ github.ref_name }}"
+            RELEASE_DIR="/home/balise/releases/${VERSION}"
+            SHARED_DIR="/home/balise/shared"
+            CURRENT_LINK="/home/balise/current"
+
+            echo "→ Déploiement de $VERSION"
+
+            # Créer les dossiers si nécessaire
+            mkdir -p "$RELEASE_DIR"
+            mkdir -p "$SHARED_DIR"
+
+            # Cloner uniquement ce tag
+            git clone --depth 1 --branch "$VERSION" \
+              git@github.com:Fvrenn/Balise.git "$RELEASE_DIR"
+
+            # Lier le .env.production partagé
+            ln -sf "$SHARED_DIR/.env.production" "$RELEASE_DIR/.env.production"
+
+            # Installer les dépendances
+            cd "$RELEASE_DIR"
+            pnpm install --frozen-lockfile
+
+            # Build Docker depuis le nouveau dossier
+            docker compose -f "$RELEASE_DIR/docker-compose.prod.yml" \
+              build --no-cache
+
+            # Changer le symlink de façon atomique
+            ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
+
+            # Relancer les containers
+            docker compose -f "$CURRENT_LINK/docker-compose.prod.yml" up -d
+
+            # Migrations et seed
+            cd "$CURRENT_LINK"
+            DATABASE_URL="postgresql://balise:E764A6F1B3@localhost:5432/balise" \
+              pnpm exec tsx src/db/seed.ts
+
+            # Garder seulement les 3 dernières releases
+            ls -dt /home/balise/releases/*/ | tail -n +4 | xargs rm -rf 2>/dev/null || true
+
+            # Nettoyer les images Docker orphelines
             docker image prune -f
-            echo "✅ Déploiement ${{ github.ref_name }} terminé"
+
+            echo "✅ Déploiement $VERSION terminé"
+            echo "→ Current : $(readlink $CURRENT_LINK)"
