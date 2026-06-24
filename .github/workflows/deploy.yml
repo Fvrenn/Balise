@@ -72,10 +72,9 @@ jobs:
               --project-name balise \
               build --no-cache
 
-            # Arrêter les containers existants proprement
-            docker compose -f "$CURRENT_LINK/docker-compose.prod.yml" \
-              --project-name balise \
-              down || true
+            # Arrêter et supprimer les containers existants par nom
+            docker stop balise-app balise-redis balise-backup 2>/dev/null || true
+            docker rm balise-app balise-redis balise-backup 2>/dev/null || true
 
             # Changer le symlink de façon atomique
             ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
