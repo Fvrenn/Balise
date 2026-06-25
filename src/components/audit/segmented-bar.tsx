@@ -14,6 +14,7 @@ export function SegmentedBar({ counts, className }: SegmentedBarProps) {
         counts.conforme +
         counts.non_conforme +
         counts.non_applicable +
+        counts.non_teste +
         counts.pending
 
     return (

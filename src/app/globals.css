@@ -57,6 +57,8 @@
   --color-success-foreground: var(--success-foreground);
   --color-na: var(--na);
   --color-na-foreground: var(--na-foreground);
+  --color-nt: var(--nt);
+  --color-nt-foreground: var(--nt-foreground);
 
   /* Rayons */
   --radius-sm: calc(var(--radius) - 2px);
@@ -132,6 +134,9 @@
     --na: #62676e;
     /* #6B7280 non applicable */
     --na-foreground: #ffffff;
+    --nt: #4a5d72;
+    /* gris-bleu moyen — non testé, distinct du gris neutre de N/A */
+    --nt-foreground: #ffffff;
   }
 
   * {

@@ -29,6 +29,7 @@ export const findingStatus = pgEnum('finding_status', [
     'conforme',
     'non_conforme',
     'non_applicable',
+    'non_teste',       // s'applique mais n'a pas pu être testé (bug, accès impossible…)
 ])
 
 // ─── Better Auth — Core ───────────────────────────────────────────────────────
@@ -181,7 +182,7 @@ export const audits = pgTable(
         contactEmail: text('contact_email'),
         status: auditStatus('status').notNull().default('in_progress'),
         // Taux mis en cache — recalculé à chaque changement de finding
-        // Formule : conforme / (106 - non_applicable) * 100
+        // Formule : conforme / (106 - non_applicable - non_teste) * 100
         complianceRate: integer('compliance_rate'),
         createdAt: timestamp('created_at').notNull().defaultNow(),
         updatedAt: timestamp('updated_at').notNull().defaultNow(),

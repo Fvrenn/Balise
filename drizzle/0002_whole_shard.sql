@@ -1,0 +1,1 @@
+ALTER TYPE "public"."finding_status" ADD VALUE 'non_teste';

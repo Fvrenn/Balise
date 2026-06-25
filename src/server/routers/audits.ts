@@ -143,6 +143,7 @@ const FINDING_STATUS_LABELS: Record<FindingStatus, string> = {
     conforme: 'Conforme',
     non_conforme: 'Non conforme',
     non_applicable: 'Non applicable',
+    non_teste: 'Non testé',
 }
 
 const createAuditInput = z.object({

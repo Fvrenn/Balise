@@ -15,6 +15,13 @@
       "when": 1782135362207,
       "tag": "0001_brainy_longshot",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782403554171,
+      "tag": "0002_whole_shard",
+      "breakpoints": true
     }
   ]
 }

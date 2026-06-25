@@ -6,6 +6,7 @@ export const STATUS_SEGMENTS: readonly FindingStatus[] = [
     'conforme',
     'non_conforme',
     'non_applicable',
+    'non_teste',
     'pending',
 ]
 
@@ -13,6 +14,7 @@ export const STATUS_LABELS: Record<FindingStatus, string> = {
     conforme: 'Conforme',
     non_conforme: 'Non conforme',
     non_applicable: 'N/A',
+    non_teste: 'Non testé',
     pending: 'À traiter',
 }
 
@@ -21,6 +23,7 @@ export const STATUS_LEGEND_LABELS: Record<FindingStatus, string> = {
     conforme: 'conformes',
     non_conforme: 'non conf.',
     non_applicable: 'N/A',
+    non_teste: 'non testé',
     pending: 'à traiter',
 }
 
@@ -29,6 +32,7 @@ export const STATUS_BG_CLASS: Record<FindingStatus, string> = {
     conforme: 'bg-success',
     non_conforme: 'bg-destructive',
     non_applicable: 'bg-na',
+    non_teste: 'bg-nt',
     pending: 'bg-border',
 }
 
@@ -37,6 +41,7 @@ export const STATUS_STROKE_CLASS: Record<FindingStatus, string> = {
     conforme: 'stroke-success',
     non_conforme: 'stroke-destructive',
     non_applicable: 'stroke-na',
+    non_teste: 'stroke-nt',
     pending: 'stroke-border',
 }
 

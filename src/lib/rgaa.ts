@@ -11,14 +11,21 @@ export interface StatusCounts {
     conforme: number
     non_conforme: number
     non_applicable: number
+    non_teste: number
     pending: number
 }
 
 export function emptyStatusCounts(): StatusCounts {
-    return { conforme: 0, non_conforme: 0, non_applicable: 0, pending: 0 }
+    return {
+        conforme: 0,
+        non_conforme: 0,
+        non_applicable: 0,
+        non_teste: 0,
+        pending: 0,
+    }
 }
 
-// Avancement d'une thématique : ses 4 compteurs de statut + son total. Alimente la
+// Avancement d'une thématique : ses compteurs de statut + son total. Alimente la
 // sidebar de navigation, la barre de progression et le tableau de la vue d'ensemble.
 export interface ThemeProgress extends StatusCounts {
     themeId: number
@@ -26,9 +33,15 @@ export interface ThemeProgress extends StatusCounts {
     total: number
 }
 
-// Nombre de critères déjà traités (tout sauf « à traiter »).
+// Nombre de critères déjà traités (tout sauf « à traiter »). Un critère « non testé »
+// a été statué délibérément : il compte donc comme traité.
 export function treatedCount(counts: StatusCounts): number {
-    return counts.conforme + counts.non_conforme + counts.non_applicable
+    return (
+        counts.conforme +
+        counts.non_conforme +
+        counts.non_applicable +
+        counts.non_teste
+    )
 }
 
 // Additionne les compteurs de plusieurs thématiques en un total d'audit.
@@ -37,6 +50,7 @@ export function sumStatusCounts(items: StatusCounts[]): StatusCounts {
         total.conforme += item.conforme
         total.non_conforme += item.non_conforme
         total.non_applicable += item.non_applicable
+        total.non_teste += item.non_teste
         total.pending += item.pending
         return total
     }, emptyStatusCounts())
@@ -57,15 +71,15 @@ export function themeTone(counts: StatusCounts): ThemeTone {
 }
 
 // Taux de conformité officiel RGAA : part des critères *applicables* qui sont
-// conformes. Les critères non applicables sortent du dénominateur.
-//   taux = conforme / (106 - non_applicable) * 100
+// conformes. Les critères non applicables et non testés sortent du dénominateur.
+//   taux = conforme / (106 - non_applicable - non_teste) * 100
 // Retourne null tant qu'aucun critère n'a été traité (audit vierge) : afficher
 // « — » plutôt qu'un 0 % trompeur.
 export function computeComplianceRate(counts: StatusCounts): number | null {
-    const treated = counts.conforme + counts.non_conforme + counts.non_applicable
-    if (treated === 0) return null
+    if (treatedCount(counts) === 0) return null
 
-    const applicable = RGAA_CRITERIA_COUNT - counts.non_applicable
+    const applicable =
+        RGAA_CRITERIA_COUNT - counts.non_applicable - counts.non_teste
     if (applicable <= 0) return null
 
     return Math.round((counts.conforme / applicable) * 100)

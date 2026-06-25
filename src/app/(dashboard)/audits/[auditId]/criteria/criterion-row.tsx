@@ -1,8 +1,13 @@
-import { memo } from "react"
+import { Fragment, memo } from "react"
 
 import { cn } from "@/lib/utils"
 import type { FindingStatus } from "@/lib/rgaa"
 import type { AuditDetail, AuditFindingRow } from "@/trpc/types"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 // État éditable d'un finding côté client (source de vérité optimiste de la grille).
 export interface FindingState {
@@ -17,9 +22,11 @@ interface StatusOption {
   value: FindingStatus
   label: string
   selectedClass: string
+  // Affichée au survol du bouton quand le libellé seul est ambigu (N/A, NT).
+  description?: string
 }
 
-// Seuls ces trois statuts sont sélectionnables ; « pending » est l'état initial,
+// Seuls ces quatre statuts sont sélectionnables ; « pending » est l'état initial,
 // implicite (aucun bouton actif).
 const STATUS_OPTIONS: StatusOption[] = [
   {
@@ -37,6 +44,15 @@ const STATUS_OPTIONS: StatusOption[] = [
     value: "non_applicable",
     label: "N/A",
     selectedClass: "bg-muted text-muted-foreground border-transparent",
+    description:
+      "Ce critère ne s'applique pas à ce site (ex : critère sur les formulaires, mais le site n'a pas de formulaire).",
+  },
+  {
+    value: "non_teste",
+    label: "NT",
+    selectedClass: "bg-nt text-nt-foreground border-transparent",
+    description:
+      "Le critère s'applique mais n'a pas pu être testé (bug, accès impossible, etc.).",
   },
 ]
 
@@ -86,9 +102,8 @@ function CriterionRowComponent({
         <div className="flex shrink-0 gap-1">
           {STATUS_OPTIONS.map((option) => {
             const isSelected = state.status === option.value
-            return (
+            const button = (
               <button
-                key={option.value}
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => onStatusChange(finding.id, option.value)}
@@ -101,6 +116,15 @@ function CriterionRowComponent({
               >
                 {option.label}
               </button>
+            )
+            if (!option.description) {
+              return <Fragment key={option.value}>{button}</Fragment>
+            }
+            return (
+              <Tooltip key={option.value}>
+                <TooltipTrigger render={button} />
+                <TooltipContent>{option.description}</TooltipContent>
+              </Tooltip>
             )
           })}
         </div>
