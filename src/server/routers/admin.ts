@@ -1,4 +1,4 @@
-import { count, desc, eq } from 'drizzle-orm'
+import { asc, count, desc, eq } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
@@ -95,5 +95,94 @@ export const adminRouter = router({
             }
 
             return { email }
+        }),
+
+    // Tous les utilisateurs de la plateforme, du plus récent au plus ancien, avec
+    // leur rattachement à un cabinet (nom + rôle) quand il existe. organizationName
+    // et role sont null pour l'Admin plateforme et pour un Owner en attente
+    // d'onboarding — aucun des deux n'a encore d'appartenance.
+    listUsers: adminProcedure.query(async ({ ctx }) => {
+        const users = await ctx.db
+            .select({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                emailVerified: user.emailVerified,
+                isAdmin: user.isAdmin,
+                createdAt: user.createdAt,
+            })
+            .from(user)
+            .orderBy(desc(user.createdAt))
+
+        // Appartenances résolues à part puis recollées en mémoire : un leftJoin
+        // dupliquerait l'utilisateur s'il appartenait à plusieurs cabinets. On
+        // retient la plus ancienne (asc + premier gagnant), comme le contexte tRPC.
+        const memberships = await ctx.db
+            .select({
+                userId: member.userId,
+                role: member.role,
+                organizationName: organization.name,
+            })
+            .from(member)
+            .innerJoin(organization, eq(organization.id, member.organizationId))
+            .orderBy(asc(member.createdAt))
+
+        const membershipByUser = new Map<
+            string,
+            { organizationName: string; role: string }
+        >()
+        for (const membership of memberships) {
+            if (!membershipByUser.has(membership.userId)) {
+                membershipByUser.set(membership.userId, {
+                    organizationName: membership.organizationName,
+                    role: membership.role,
+                })
+            }
+        }
+
+        return users.map((account) => {
+            const membership = membershipByUser.get(account.id) ?? null
+            return {
+                ...account,
+                organizationName: membership?.organizationName ?? null,
+                role: membership?.role ?? null,
+            }
+        })
+    }),
+
+    // Supprime un utilisateur et, par cascade des clés étrangères (sessions,
+    // comptes, appartenances, assignations d'audit, invitations émises), toutes ses
+    // données rattachées. updated_by des findings passe à null (set null). Deux
+    // garde-fous : on ne supprime ni son propre compte, ni un autre Admin Balise.
+    deleteUser: adminProcedure
+        .input(z.object({ userId: z.string().min(1) }))
+        .mutation(async ({ ctx, input }) => {
+            if (input.userId === ctx.user.id) {
+                throw new TRPCError({
+                    code: 'BAD_REQUEST',
+                    message: 'Vous ne pouvez pas supprimer votre propre compte.',
+                })
+            }
+
+            const target = await ctx.db.query.user.findFirst({
+                where: eq(user.id, input.userId),
+                columns: { id: true, isAdmin: true },
+            })
+            if (!target) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: 'Utilisateur introuvable.',
+                })
+            }
+            if (target.isAdmin) {
+                throw new TRPCError({
+                    code: 'FORBIDDEN',
+                    message: 'Impossible de supprimer un administrateur Balise.',
+                })
+            }
+
+            await ctx.db.delete(user).where(eq(user.id, input.userId))
+
+            return { id: input.userId }
         }),
 })

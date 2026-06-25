@@ -6,15 +6,20 @@ import { eq } from "drizzle-orm"
 import { auth } from "@/lib/auth"
 import { db } from "@/db"
 import { user } from "@/db/schema"
-import { Logo } from "@/components/logo"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
-import { AdminSignOut } from "./admin-sign-out"
+import { AdminSidebar } from "./admin-sidebar"
 
 // Espace réservé à l'Admin plateforme Balise (user.isAdmin). Volontairement hors
 // des groupes (dashboard) et (auth) : il n'hérite d'aucune vérification
 // d'organisation, car l'Admin n'appartient à aucun cabinet. Seul isAdmin — lu en
-// base, la session Better Auth ne le portant pas — ouvre l'accès. Voir CLAUDE.md
-// « Modèle d'accès ».
+// base, la session Better Auth ne le portant pas — ouvre l'accès. Un non-admin
+// connecté repart vers son dashboard. Voir CLAUDE.md « Modèle d'accès ».
 export default async function AdminLayout({
   children,
 }: {
@@ -30,21 +35,26 @@ export default async function AdminLayout({
     columns: { isAdmin: true },
   })
   if (!account?.isAdmin) {
-    redirect("/login")
+    redirect("/dashboard")
   }
 
   return (
-    <div className="flex min-h-svh flex-col bg-background">
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface px-6">
-        <div className="flex items-center gap-2.5">
-          <Logo iconOnly />
-          <span className="text-sm font-medium text-muted-foreground">
-            Administration
-          </span>
-        </div>
-        <AdminSignOut />
-      </header>
-      <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
-    </div>
+    <TooltipProvider delay={0}>
+      <SidebarProvider>
+        <AdminSidebar
+          adminName={session.user.name}
+          adminEmail={session.user.email}
+        />
+        <SidebarInset className="h-svh overflow-hidden">
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-surface px-4">
+            <SidebarTrigger />
+            <span className="text-sm font-medium text-muted-foreground">
+              Administration
+            </span>
+          </header>
+          <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   )
 }
