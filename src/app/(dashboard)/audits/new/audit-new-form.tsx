@@ -53,6 +53,7 @@ function RequiredMark() {
 export function AuditNewForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const utils = trpc.useUtils()
 
   const clientsQuery = trpc.clients.list.useQuery()
   const membersQuery = trpc.audits.listMembers.useQuery()
@@ -81,6 +82,12 @@ export function AuditNewForm() {
 
   const createAudit = trpc.audits.create.useMutation({
     onSuccess: (audit) => {
+      // Le nouvel audit (statut « in_progress ») doit apparaître immédiatement
+      // dans la sidebar (« En cours »), la liste des audits et les stats du
+      // dashboard, sans rechargement manuel de la page.
+      utils.audits.listMine.invalidate()
+      utils.audits.list.invalidate()
+      utils.audits.stats.invalidate()
       toast.success("Audit créé.")
       router.push(`/audits/${audit.id}`)
     },

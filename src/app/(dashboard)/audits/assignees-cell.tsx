@@ -37,6 +37,7 @@ const MIN_ASSIGNEES_MESSAGE = "Au moins un auditeur doit rester assigné."
 // les audits sont partagés au sein du cabinet (cf. routeur audits, updateAssignees).
 export function AssigneesCell({ auditId, assignees }: AssigneesCellProps) {
   const router = useRouter()
+  const utils = trpc.useUtils()
 
   const [editorOpen, setEditorOpen] = useState(false)
   const [hoverOpen, setHoverOpen] = useState(false)
@@ -56,6 +57,9 @@ export function AssigneesCell({ auditId, assignees }: AssigneesCellProps) {
       // Le tableau est rendu à partir des données serveur : on les rafraîchit pour
       // refléter la nouvelle assignation.
       router.refresh()
+      // La réassignation change la liste des audits « à moi » : la section « En
+      // cours » de la sidebar (query client) doit être rafraîchie elle aussi.
+      utils.audits.listMine.invalidate()
     },
     onError: (error) => {
       toast.error(error.message || "La mise à jour de l'assignation a échoué.")

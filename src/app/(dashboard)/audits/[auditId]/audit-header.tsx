@@ -53,6 +53,9 @@ export function AuditHeader({
       utils.audits.getById.invalidate({ id: auditId })
       utils.audits.list.invalidate()
       utils.audits.stats.invalidate()
+      // Le changement de statut fait entrer/sortir l'audit de la section « En
+      // cours » de la sidebar (qui ne liste que les audits « in_progress »).
+      utils.audits.listMine.invalidate()
     },
   })
 
