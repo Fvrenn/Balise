@@ -1,19 +1,29 @@
-import { Fragment, memo } from "react"
+import { Fragment, memo, useState } from "react"
+import { Copy } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import type { FindingStatus } from "@/lib/rgaa"
 import type { AuditDetail, AuditFindingRow } from "@/trpc/types"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-// État éditable d'un finding côté client (source de vérité optimiste de la grille).
+// État éditable d'un finding (pour une page donnée) côté client : source de vérité
+// optimiste de la grille. copiedFromPageId, non null, marque une valeur propagée
+// depuis une autre page tant qu'elle n'a pas été rééditée à la main.
 export interface FindingState {
   status: FindingStatus
   comment: string
-  concernedPageIds: string[]
+  copiedFromPageId: string | null
 }
 
 type SamplePage = AuditDetail["pages"][number]
@@ -43,7 +53,7 @@ const STATUS_OPTIONS: StatusOption[] = [
   {
     value: "non_applicable",
     label: "N/A",
-    selectedClass: "bg-muted text-muted-foreground border-transparent",
+    selectedClass: "bg-foreground text-background border-foreground",
     description:
       "Ce critère ne s'applique pas à ce site (ex : critère sur les formulaires, mais le site n'a pas de formulaire).",
   },
@@ -60,29 +70,32 @@ interface CriterionRowProps {
   finding: AuditFindingRow
   state: FindingState
   pages: SamplePage[]
+  findingIdByCriterionPage: Map<string, Map<string, string>>
+  stateRef: React.MutableRefObject<Map<string, FindingState>>
   onStatusChange: (findingId: string, status: FindingStatus) => void
   onCommentChange: (findingId: string, comment: string) => void
-  onPagesChange: (findingId: string, pageIds: string[]) => void
+  onCopyToPages: (findingId: string, targetPageIds: string[]) => void
 }
 
-// Une ligne de critère. Mémoïsée : seule la ligne dont l'état change est re-rendue,
-// la grille reste fluide avec 106 items.
+// Une ligne de critère pour la page active. Mémoïsée : seule la ligne dont l'état
+// change est re-rendue, la grille reste fluide avec 106 items.
 function CriterionRowComponent({
   finding,
   state,
   pages,
+  findingIdByCriterionPage,
+  stateRef,
   onStatusChange,
   onCommentChange,
-  onPagesChange,
+  onCopyToPages,
 }: CriterionRowProps) {
   const showNonConformeDetails = state.status === "non_conforme"
-
-  function togglePage(pageId: string) {
-    const next = state.concernedPageIds.includes(pageId)
-      ? state.concernedPageIds.filter((id) => id !== pageId)
-      : [...state.concernedPageIds, pageId]
-    onPagesChange(finding.id, next)
-  }
+  const canCopy = state.status !== "pending"
+  const otherPages = pages.filter((page) => page.id !== finding.pageId)
+  const sourceLabel =
+    state.copiedFromPageId === null
+      ? null
+      : (pages.find((page) => page.id === state.copiedFromPageId)?.label ?? null)
 
   return (
     <div className="space-y-3 border-b border-border px-4 py-4 last:border-b-0">
@@ -99,80 +112,174 @@ function CriterionRowComponent({
           <p className="text-sm text-foreground">{finding.title}</p>
         </div>
 
-        <div className="flex shrink-0 gap-1">
-          {STATUS_OPTIONS.map((option) => {
-            const isSelected = state.status === option.value
-            const button = (
-              <button
-                type="button"
-                aria-pressed={isSelected}
-                onClick={() => onStatusChange(finding.id, option.value)}
-                className={cn(
-                  "rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
-                  isSelected
-                    ? option.selectedClass
-                    : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                {option.label}
-              </button>
-            )
-            if (!option.description) {
-              return <Fragment key={option.value}>{button}</Fragment>
-            }
-            return (
-              <Tooltip key={option.value}>
-                <TooltipTrigger render={button} />
-                <TooltipContent>{option.description}</TooltipContent>
-              </Tooltip>
-            )
-          })}
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <div className="flex gap-1">
+            {STATUS_OPTIONS.map((option) => {
+              const isSelected = state.status === option.value
+              const button = (
+                <button
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => onStatusChange(finding.id, option.value)}
+                  className={cn(
+                    "rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+                    isSelected
+                      ? option.selectedClass
+                      : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  {option.label}
+                </button>
+              )
+              if (!option.description) {
+                return <Fragment key={option.value}>{button}</Fragment>
+              }
+              return (
+                <Tooltip key={option.value}>
+                  <TooltipTrigger render={button} />
+                  <TooltipContent>{option.description}</TooltipContent>
+                </Tooltip>
+              )
+            })}
+          </div>
+
+          {sourceLabel || (canCopy && otherPages.length > 0) ? (
+            <div className="flex items-center gap-2">
+              {sourceLabel ? (
+                <span className="text-xs text-muted-foreground">
+                  Propagé depuis {sourceLabel}
+                </span>
+              ) : null}
+              {canCopy && otherPages.length > 0 ? (
+                <CopyToPagesPopover
+                  finding={finding}
+                  state={state}
+                  pages={otherPages}
+                  findingIdByCriterionPage={findingIdByCriterionPage}
+                  stateRef={stateRef}
+                  onCopy={(targetPageIds) =>
+                    onCopyToPages(finding.id, targetPageIds)
+                  }
+                />
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
       {showNonConformeDetails ? (
-        <div className="space-y-3 rounded-lg bg-surface-2 p-3">
-          <div className="space-y-1.5">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-destructive">
-              Commentaire d&apos;audit · Requis
-            </p>
-            <textarea
-              value={state.comment}
-              onChange={(event) =>
-                onCommentChange(finding.id, event.target.value)
-              }
-              rows={3}
-              placeholder="Décrire la non-conformité constatée, l'élément concerné et la recommandation de correction…"
-              className="w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
-            />
-          </div>
-
-          {pages.length > 0 ? (
-            <div className="space-y-1.5">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                Pages concernées
-              </p>
-              <div className="flex flex-wrap gap-3">
-                {pages.map((page) => (
-                  <label
-                    key={page.id}
-                    className="flex items-center gap-1.5 text-sm text-foreground"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={state.concernedPageIds.includes(page.id)}
-                      onChange={() => togglePage(page.id)}
-                      className="size-4 accent-primary"
-                    />
-                    {page.label}
-                  </label>
-                ))}
-              </div>
-            </div>
-          ) : null}
+        <div className="space-y-1.5 rounded-lg bg-surface-2 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-destructive">
+            Commentaire d&apos;audit · Requis
+          </p>
+          <textarea
+            value={state.comment}
+            onChange={(event) =>
+              onCommentChange(finding.id, event.target.value)
+            }
+            rows={3}
+            placeholder="Décrire la non-conformité constatée, l'élément concerné et la recommandation de correction…"
+            className="w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
+          />
         </div>
       ) : null}
     </div>
+  )
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  conforme: "Conforme",
+  non_conforme: "Non conforme",
+  non_applicable: "Non applicable",
+  non_teste: "Non testé",
+  pending: "En attente"
+}
+
+interface CopyToPagesPopoverProps {
+  finding: AuditFindingRow
+  state: FindingState
+  pages: SamplePage[]
+  findingIdByCriterionPage: Map<string, Map<string, string>>
+  stateRef: React.MutableRefObject<Map<string, FindingState>>
+  onCopy: (targetPageIds: string[]) => void
+}
+
+function CopyToPagesPopover({ finding, state, pages, findingIdByCriterionPage, stateRef, onCopy }: CopyToPagesPopoverProps) {
+  const [open, setOpen] = useState(false)
+  const [copiedTo, setCopiedTo] = useState<Set<string>>(new Set())
+
+  function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen)
+    if (!nextOpen) {
+      setTimeout(() => setCopiedTo(new Set()), 200)
+    }
+  }
+
+  function handleCopyAll() {
+    onCopy(pages.map(p => p.id))
+    setCopiedTo(new Set(pages.map(p => p.id)))
+  }
+
+  function handleCopySingle(pageId: string) {
+    onCopy([pageId])
+    setCopiedTo(new Set(copiedTo).add(pageId))
+  }
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger
+        render={
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <Copy className="size-3" />
+            Propager…
+          </button>
+        }
+      />
+      <PopoverContent align="end" className="w-80 p-0">
+        <div className="flex flex-col">
+          <div className="border-b border-border p-2">
+            <Button size="sm" variant="secondary" className="w-full text-xs font-medium" onClick={handleCopyAll}>
+              Propager à toutes les autres pages
+            </Button>
+          </div>
+          <div className="max-h-64 overflow-y-auto p-1.5 space-y-0.5">
+            {pages.map((page) => {
+              const targetFindingId = findingIdByCriterionPage.get(finding.criterionId)?.get(page.id)
+              const targetState = targetFindingId ? stateRef.current.get(targetFindingId) : undefined
+
+              const isSameStatus = targetState?.status === state.status
+              const isSameComment = targetState?.comment === state.comment
+              const isSame = isSameStatus && isSameComment
+              const isCopied = copiedTo.has(page.id) || isSame
+
+              return (
+                <div
+                  key={page.id}
+                  className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-accent"
+                >
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-foreground">{page.label}</span>
+                    <span className="text-[10px] uppercase text-muted-foreground">
+                      {STATUS_LABELS[targetState?.status || "pending"]}
+                    </span>
+                  </div>
+                  {isCopied ? (
+                    <span className="text-success text-xs font-medium px-2">À jour ✓</span>
+                  ) : (
+                    <Button size="sm" variant="outline" className="h-6 text-xs px-2" onClick={() => handleCopySingle(page.id)}>
+                      Appliquer
+                    </Button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }
 

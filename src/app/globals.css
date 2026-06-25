@@ -159,3 +159,33 @@
     letter-spacing: -0.025em;
   }
 }
+
+@layer components {
+  /* Inverted border radius on active tab — the tab "flows" into the content below */
+  .tab-inverted-radius {
+    position: relative;
+  }
+
+  .tab-inverted-radius::before,
+  .tab-inverted-radius::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    width: 10px;
+    height: 10px;
+    background: transparent;
+    pointer-events: none;
+  }
+
+  .tab-inverted-radius::before {
+    left: -10px;
+    border-bottom-right-radius: 10px;
+    box-shadow: 5px 0 0 0 var(--surface);
+  }
+
+  .tab-inverted-radius::after {
+    right: -10px;
+    border-bottom-left-radius: 10px;
+    box-shadow: -5px 0 0 0 var(--surface);
+  }
+}

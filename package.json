@@ -12,6 +12,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx --env-file .env.local src/db/seed.ts",
+    "migrate:findings-per-page": "tsx --env-file .env.local src/db/migrate-findings-per-page.ts",
     "create:owner": "tsx --env-file .env.local src/db/create-owner.ts"
   },
   "dependencies": {

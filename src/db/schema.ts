@@ -268,9 +268,9 @@ export const rgaaCriteria = pgTable(
 )
 
 // ─── Findings ─────────────────────────────────────────────────────────────────
-// Un finding = le résultat d'un critère dans un audit.
-// Créés automatiquement pour les 106 critères à la création de l'audit (status: pending).
-// L'auditrice les met à jour au fur et à mesure de son travail.
+// Un finding = le résultat d'un critère dans un audit, pour une page donnée.
+// L'auditrice travaille page par page : un audit porte donc 106 × N findings,
+// créés en status 'pending' à la création de l'audit (un par critère par page).
 
 export const auditFindings = pgTable(
     'audit_findings',
@@ -284,11 +284,19 @@ export const auditFindings = pgTable(
         criterionId: text('criterion_id')
             .notNull()
             .references(() => rgaaCriteria.id),
+        // La page de l'échantillon à laquelle ce finding se rapporte : chaque critère
+        // est évalué indépendamment sur chacune des pages de l'audit.
+        pageId: text('page_id')
+            .notNull()
+            .references(() => auditPages.id, { onDelete: 'cascade' }),
         status: findingStatus('status').notNull().default('pending'),
         // Obligatoire quand status = 'non_conforme' (validé côté application, pas en DB)
         comment: text('comment'),
-        // IDs des pages de l'échantillon concernées par cette non-conformité
-        concernedPageIds: text('concerned_page_ids').array(),
+        // Renseigné quand ce finding a été propagé depuis une autre page (« Copier vers
+        // d'autres pages ») : porte l'id de la page source, uniquement pour afficher
+        // l'indicateur « Propagé depuis … ». Repassé à null dès que l'auditrice modifie
+        // ce finding à la main (saisie directe).
+        copiedFromPageId: text('copied_from_page_id'),
         updatedBy: text('updated_by')
             .references(() => user.id, { onDelete: 'set null' }),
         updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -296,11 +304,11 @@ export const auditFindings = pgTable(
     (t) => ({
         auditIdx: index('findings_audit_idx').on(t.auditId),
         criterionIdx: index('findings_criterion_idx').on(t.criterionId),
-        // Un seul finding par critère par audit
-        auditCriterionUnique: uniqueIndex('findings_audit_criterion_uidx').on(
-            t.auditId,
-            t.criterionId,
-        ),
+        pageIdx: index('findings_page_idx').on(t.pageId),
+        // Un seul finding par critère et par page d'un audit.
+        auditCriterionPageUnique: uniqueIndex(
+            'findings_audit_criterion_page_uidx',
+        ).on(t.auditId, t.criterionId, t.pageId),
     }),
 )
 
@@ -360,11 +368,12 @@ export const auditAssigneesRelations = relations(auditAssignees, ({ one }) => ({
     }),
 }))
 
-export const auditPagesRelations = relations(auditPages, ({ one }) => ({
+export const auditPagesRelations = relations(auditPages, ({ one, many }) => ({
     audit: one(audits, {
         fields: [auditPages.auditId],
         references: [audits.id],
     }),
+    findings: many(auditFindings),
 }))
 
 export const rgaaCriteriaRelations = relations(rgaaCriteria, ({ many }) => ({
@@ -379,6 +388,10 @@ export const auditFindingsRelations = relations(auditFindings, ({ one }) => ({
     criterion: one(rgaaCriteria, {
         fields: [auditFindings.criterionId],
         references: [rgaaCriteria.id],
+    }),
+    page: one(auditPages, {
+        fields: [auditFindings.pageId],
+        references: [auditPages.id],
     }),
     updatedByUser: one(user, {
         fields: [auditFindings.updatedBy],
