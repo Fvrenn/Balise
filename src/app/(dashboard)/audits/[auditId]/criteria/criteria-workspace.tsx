@@ -29,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ThemeSidebar } from "@/components/audit/theme-sidebar"
+import { useHeaderCollapse } from "../header-collapse-context"
 import {
   CriterionRow,
   type FindingState,
@@ -48,6 +49,8 @@ export function CriteriaWorkspace({ auditId }: { auditId: string }) {
   const utils = trpc.useUtils()
   const findingsQuery = trpc.audits.getFindings.useQuery({ auditId })
   const auditQuery = trpc.audits.getById.useQuery({ id: auditId })
+  const { collapseOnce } = useHeaderCollapse()
+  const autoCollapsedRef = useRef(false)
 
   const findings = useMemo(
     () => findingsQuery.data ?? [],
@@ -184,9 +187,14 @@ export function CriteriaWorkspace({ auditId }: { auditId: string }) {
   )
 
   const handleStatusChange = useCallback(
-    (findingId: string, status: FindingStatus) =>
-      patchFinding(findingId, { status }),
-    [patchFinding],
+    (findingId: string, status: FindingStatus) => {
+      if (!autoCollapsedRef.current) {
+        autoCollapsedRef.current = true
+        collapseOnce()
+      }
+      patchFinding(findingId, { status })
+    },
+    [patchFinding, collapseOnce],
   )
   const handleCommentChange = useCallback(
     (findingId: string, comment: string) =>

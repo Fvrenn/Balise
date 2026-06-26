@@ -19,7 +19,7 @@ const syne = Syne({
 })
 
 export const metadata: Metadata = {
-  title: "balise — audit RGAA",
+  title: "Balise - audit RGAA",
   description: "Outil d'audit d'accessibilité numérique RGAA 4.1.2",
 }
 
