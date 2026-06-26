@@ -6,6 +6,8 @@ import { eq } from "drizzle-orm"
 import { auth } from "@/lib/auth"
 import { db } from "@/db"
 import { user } from "@/db/schema"
+import { HeaderSlotProvider, HeaderSlotTarget } from "@/components/header-slot"
+import { Separator } from "@/components/ui/separator"
 import {
   SidebarInset,
   SidebarProvider,
@@ -14,6 +16,7 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip"
 
 import { AdminSidebar } from "./admin-sidebar"
+import { AdminBreadcrumbs } from "./admin-breadcrumbs"
 
 // Espace réservé à l'Admin plateforme Balise (user.isAdmin). Volontairement hors
 // des groupes (dashboard) et (auth) : il n'hérite d'aucune vérification
@@ -46,13 +49,17 @@ export default async function AdminLayout({
           adminEmail={session.user.email}
         />
         <SidebarInset className="h-svh overflow-hidden">
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-surface px-4">
-            <SidebarTrigger />
-            <span className="text-sm font-medium text-muted-foreground">
-              Administration
-            </span>
-          </header>
-          <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+          <HeaderSlotProvider>
+            <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border bg-surface px-4">
+              <div className="flex min-w-0 items-center gap-2">
+                <SidebarTrigger />
+                <Separator orientation="vertical" className="h-6" />
+                <AdminBreadcrumbs />
+              </div>
+              <HeaderSlotTarget className="flex shrink-0 items-center gap-2" />
+            </header>
+            <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+          </HeaderSlotProvider>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>

@@ -206,14 +206,13 @@ export function AuditNewForm() {
               </FieldLabel>
               <Input
                 id="audit-site-url"
-                type="url"
                 value={siteUrl}
                 onChange={(event) => setSiteUrl(event.target.value)}
-                placeholder="https://exemple.fr"
+                placeholder="exemple.fr"
                 disabled={isSubmitting}
               />
               <FieldDescription>
-                L&apos;URL complète du site, protocole inclus.
+                Domaine ou URL complète du site (ex. exemple.fr).
               </FieldDescription>
             </Field>
           </section>
@@ -314,12 +313,11 @@ export function AuditNewForm() {
                 />
                 <Input
                   className="sm:flex-1"
-                  type="url"
                   value={page.url}
                   onChange={(event) =>
                     updatePage(page.id, { url: event.target.value })
                   }
-                  placeholder="https://exemple.fr/accueil"
+                  placeholder="exemple.fr/accueil"
                   disabled={isSubmitting}
                   aria-label="URL de la page"
                 />

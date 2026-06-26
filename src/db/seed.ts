@@ -1058,7 +1058,7 @@ async function createPlatformAdmin() {
 
     const { user: created } = await auth.api.signUpEmail({
         body: { email, password: 'changeme123', name: 'Admin Balise' },
-    })
+    })  
     await db.update(user).set({ isAdmin: true }).where(eq(user.id, created.id))
     console.log(`✅ Admin plateforme créé (sans cabinet) : ${email}`)
 }

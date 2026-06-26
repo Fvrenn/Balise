@@ -6,10 +6,17 @@ import { protectedProcedure, router } from '@/server/trpc'
 import { audits, clients } from '@/db/schema'
 import { getAssigneesByAudit } from '@/server/assignees'
 
+const normalizeUrlField = (v: string) =>
+    v && !/^https?:\/\//i.test(v) ? `https://${v}` : v
+
 const createClientInput = z.object({
     name: z.string().trim().min(1, 'Le nom est obligatoire.').max(200),
-    // Description libre, optionnelle — ni URL ni contact ici (le contact est porté
-    // par l'audit, qui cible un site précis).
+    contactName: z.string().trim().max(200).optional(),
+    contactEmail: z.string().trim().email('Email invalide.').max(200).optional().or(z.literal('')),
+    contactPhone: z.string().trim().max(50).optional(),
+    website: z.string().trim().max(500).transform(normalizeUrlField).optional(),
+    address: z.string().trim().max(500).optional(),
+    siret: z.string().trim().max(20).optional(),
     note: z.string().trim().max(2000).optional(),
 })
 
@@ -80,7 +87,18 @@ export const clientsRouter = router({
                     eq(clients.id, input.id),
                     eq(clients.organizationId, ctx.organizationId),
                 ),
-                columns: { id: true, name: true, note: true, createdAt: true },
+                columns: {
+                    id: true,
+                    name: true,
+                    contactName: true,
+                    contactEmail: true,
+                    contactPhone: true,
+                    website: true,
+                    address: true,
+                    siret: true,
+                    note: true,
+                    createdAt: true,
+                },
             })
             if (!client) {
                 throw new TRPCError({
@@ -127,6 +145,12 @@ export const clientsRouter = router({
                 .values({
                     organizationId: ctx.organizationId,
                     name: input.name,
+                    contactName: input.contactName || null,
+                    contactEmail: input.contactEmail || null,
+                    contactPhone: input.contactPhone || null,
+                    website: input.website || null,
+                    address: input.address || null,
+                    siret: input.siret || null,
                     note: input.note || null,
                 })
                 .returning()
@@ -148,6 +172,12 @@ export const clientsRouter = router({
                 .update(clients)
                 .set({
                     name: input.name,
+                    contactName: input.contactName || null,
+                    contactEmail: input.contactEmail || null,
+                    contactPhone: input.contactPhone || null,
+                    website: input.website || null,
+                    address: input.address || null,
+                    siret: input.siret || null,
                     note: input.note || null,
                     updatedAt: new Date(),
                 })

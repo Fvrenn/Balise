@@ -141,10 +141,9 @@ export function CreateCabinetForm() {
         <FieldLabel htmlFor="cabinet-website">Site web du cabinet</FieldLabel>
         <Input
           id="cabinet-website"
-          type="url"
           value={website}
           onChange={(event) => setWebsite(event.target.value)}
-          placeholder="https://www.cabinet.fr"
+          placeholder="cabinet.fr"
           disabled={isSubmitting}
         />
       </Field>

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
   Building2,
+  ChevronsUpDown,
   LayoutDashboard,
   LogOut,
   Users,
@@ -15,6 +16,13 @@ import { getInitials } from "@/lib/utils"
 import { Logo } from "@/components/logo"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -24,7 +32,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar"
 
@@ -53,7 +60,6 @@ export function AdminSidebar({
   const pathname = usePathname()
   const router = useRouter()
   const { isMobile, state } = useSidebar()
-  const isCollapsed = isMobile || state === "collapsed"
 
   // « Cabinets » (/admin) est la racine de l'espace : actif uniquement en
   // correspondance exacte, sinon il s'allumerait aussi sous /admin/users.
@@ -71,7 +77,7 @@ export function AdminSidebar({
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="justify-center px-3">
-        <Logo iconOnly={isCollapsed} />
+        <Logo iconOnly={isMobile || state === "collapsed"} />
       </SidebarHeader>
 
       <SidebarContent>
@@ -96,37 +102,57 @@ export function AdminSidebar({
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="flex items-center gap-2.5 px-2 py-1.5 group-data-[collapsible=icon]:hidden">
-          <Avatar className="size-8 rounded-lg">
-            <AvatarFallback className="rounded-lg bg-sidebar-primary/15 text-sidebar-primary">
-              {getInitials(adminName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-medium">{adminName}</span>
-            <span className="truncate text-xs text-sidebar-foreground/70">
-              {adminEmail}
-            </span>
-          </div>
-        </div>
-
-        <SidebarSeparator className="group-data-[collapsible=icon]:hidden" />
-
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="Retour à l'app"
-              render={<Link href="/dashboard" />}
-            >
-              <LayoutDashboard />
-              <span>Retour à l&apos;app</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Se déconnecter" onClick={handleSignOut}>
-              <LogOut />
-              <span>Se déconnecter</span>
-            </SidebarMenuButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <SidebarMenuButton
+                    size="lg"
+                    className="data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground"
+                  />
+                }
+              >
+                <Avatar className="size-8 rounded-lg">
+                  <AvatarFallback className="rounded-lg bg-sidebar-primary/15 text-sidebar-primary">
+                    {getInitials(adminName)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-medium">{adminName}</span>
+                  <span className="truncate text-xs text-sidebar-foreground/70">
+                    {adminEmail}
+                  </span>
+                </div>
+                <ChevronsUpDown className="ml-auto size-4 text-sidebar-foreground/70" />
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent
+                side="top"
+                align="end"
+                sideOffset={8}
+                className="min-w-56"
+              >
+                <div className="px-1.5 py-1.5">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {adminName}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {adminEmail}
+                  </p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem render={<Link href="/dashboard" />}>
+                  <LayoutDashboard />
+                  Retour à l&apos;app
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
+                  <LogOut />
+                  Se déconnecter
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

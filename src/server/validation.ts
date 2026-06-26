@@ -11,12 +11,13 @@ export const cabinetName = z
     .max(200)
 
 // Champ texte optionnel : « » (vidé par l'utilisateur) est accepté et vaudra null
-// en base ; toute autre valeur doit respecter le format demandé.
+// en base ; toute autre valeur est normalisée (https:// ajouté si absent) puis
+// validée en tant qu'URL — ce qui autorise les domaines nus (ex. « exemple.fr »).
 export const optionalWebsite = z
     .string()
     .trim()
-    .url('Adresse du site web invalide.')
-    .max(2000)
+    .transform((v) => (v && !/^https?:\/\//i.test(v) ? `https://${v}` : v))
+    .pipe(z.string().url('Adresse du site web invalide.').max(2000))
     .or(z.literal(''))
     .optional()
 

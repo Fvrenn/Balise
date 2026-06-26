@@ -149,8 +149,12 @@ export const clients = pgTable(
             .notNull()
             .references(() => organization.id, { onDelete: 'cascade' }),
         name: text('name').notNull(),
-        // Description libre du client (ex : « Groupe bancaire, plusieurs filiales »).
-        // Le contact n'est plus porté ici : il dépend du site audité, donc de l'audit.
+        contactName: text('contact_name'),
+        contactEmail: text('contact_email'),
+        contactPhone: text('contact_phone'),
+        website: text('website'),
+        address: text('address'),
+        siret: text('siret'),
         note: text('note'),
         createdAt: timestamp('created_at').notNull().defaultNow(),
         updatedAt: timestamp('updated_at').notNull().defaultNow(),

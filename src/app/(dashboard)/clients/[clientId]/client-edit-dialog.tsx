@@ -15,13 +15,31 @@ import { Label } from "@/components/ui/label"
 const FORM_ID = "client-edit-form"
 
 interface ClientEditDialogProps {
-  client: { id: string; name: string; note: string | null }
+  client: {
+    id: string
+    name: string
+    contactName?: string | null
+    contactEmail?: string | null
+    contactPhone?: string | null
+    website?: string | null
+    address?: string | null
+    siret?: string | null
+    note?: string | null
+  }
 }
 
 export function ClientEditDialog({ client }: ClientEditDialogProps) {
   const [open, setOpen] = useState(false)
-  const [name, setName] = useState(client.name)
-  const [note, setNote] = useState(client.note ?? "")
+  const [form, setForm] = useState({
+    name: client.name,
+    contactName: client.contactName ?? "",
+    contactEmail: client.contactEmail ?? "",
+    contactPhone: client.contactPhone ?? "",
+    website: client.website ?? "",
+    address: client.address ?? "",
+    siret: client.siret ?? "",
+    note: client.note ?? "",
+  })
 
   const router = useRouter()
   const utils = trpc.useUtils()
@@ -30,7 +48,6 @@ export function ClientEditDialog({ client }: ClientEditDialogProps) {
       await utils.clients.list.invalidate()
       toast.success("Fiche client mise à jour.")
       setOpen(false)
-      // Rafraîchit le Server Component de la fiche pour refléter le nom/la note.
       router.refresh()
     },
     onError: (error) => {
@@ -40,19 +57,37 @@ export function ClientEditDialog({ client }: ClientEditDialogProps) {
 
   function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen)
-    // À l'ouverture, on resynchronise les champs sur les dernières données serveur.
     if (nextOpen) {
-      setName(client.name)
-      setNote(client.note ?? "")
+      setForm({
+        name: client.name,
+        contactName: client.contactName ?? "",
+        contactEmail: client.contactEmail ?? "",
+        contactPhone: client.contactPhone ?? "",
+        website: client.website ?? "",
+        address: client.address ?? "",
+        siret: client.siret ?? "",
+        note: client.note ?? "",
+      })
     }
+  }
+
+  function set(field: keyof typeof form) {
+    return (event: React.ChangeEvent<HTMLInputElement>) =>
+      setForm((prev) => ({ ...prev, [field]: event.target.value }))
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     updateClient.mutate({
       id: client.id,
-      name: name.trim(),
-      note: note.trim() || undefined,
+      name: form.name.trim(),
+      contactName: form.contactName.trim() || undefined,
+      contactEmail: form.contactEmail.trim() || undefined,
+      contactPhone: form.contactPhone.trim() || undefined,
+      website: form.website.trim() || undefined,
+      address: form.address.trim() || undefined,
+      siret: form.siret.trim() || undefined,
+      note: form.note.trim() || undefined,
     })
   }
 
@@ -83,7 +118,7 @@ export function ClientEditDialog({ client }: ClientEditDialogProps) {
           <Button
             type="submit"
             form={FORM_ID}
-            disabled={isSubmitting || name.trim().length === 0}
+            disabled={isSubmitting || form.name.trim().length === 0}
           >
             {isSubmitting ? <Loader2 className="animate-spin" /> : null}
             Enregistrer
@@ -93,13 +128,13 @@ export function ClientEditDialog({ client }: ClientEditDialogProps) {
     >
       <form id={FORM_ID} onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="edit-client-name">
+          <Label htmlFor="edit-name">
             Raison sociale <span className="text-destructive">*</span>
           </Label>
           <Input
-            id="edit-client-name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
+            id="edit-name"
+            value={form.name}
+            onChange={set("name")}
             placeholder="ex. Mairie de Strasbourg"
             required
             disabled={isSubmitting}
@@ -107,17 +142,105 @@ export function ClientEditDialog({ client }: ClientEditDialogProps) {
           />
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-contact-name">
+              Nom du contact{" "}
+              <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
+            </Label>
+            <Input
+              id="edit-contact-name"
+              value={form.contactName}
+              onChange={set("contactName")}
+              placeholder="Jean Dupont"
+              disabled={isSubmitting}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-siret">
+              SIRET{" "}
+              <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
+            </Label>
+            <Input
+              id="edit-siret"
+              value={form.siret}
+              onChange={set("siret")}
+              placeholder="123 456 789 00012"
+              disabled={isSubmitting}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-email">
+              Email{" "}
+              <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
+            </Label>
+            <Input
+              id="edit-email"
+              type="email"
+              value={form.contactEmail}
+              onChange={set("contactEmail")}
+              placeholder="contact@exemple.fr"
+              disabled={isSubmitting}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-phone">
+              Téléphone{" "}
+              <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
+            </Label>
+            <Input
+              id="edit-phone"
+              type="tel"
+              value={form.contactPhone}
+              onChange={set("contactPhone")}
+              placeholder="01 23 45 67 89"
+              disabled={isSubmitting}
+            />
+          </div>
+        </div>
+
         <div className="space-y-2">
-          <Label htmlFor="edit-client-note">
-            Note interne{" "}
-            <span className="text-xs font-normal text-muted-foreground">
-              (optionnel)
-            </span>
+          <Label htmlFor="edit-website">
+            Site web{" "}
+            <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
           </Label>
           <Input
-            id="edit-client-note"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
+            id="edit-website"
+            value={form.website}
+            onChange={set("website")}
+            placeholder="exemple.fr"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-address">
+            Adresse{" "}
+            <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
+          </Label>
+          <Input
+            id="edit-address"
+            value={form.address}
+            onChange={set("address")}
+            placeholder="12 rue de la Paix, 75001 Paris"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-note">
+            Note interne{" "}
+            <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
+          </Label>
+          <Input
+            id="edit-note"
+            value={form.note}
+            onChange={set("note")}
             placeholder="Groupe bancaire, plusieurs filiales…"
             disabled={isSubmitting}
           />

@@ -33,9 +33,17 @@ import {
     type ThemeProgress,
 } from '@/lib/rgaa'
 
+const normalizeUrlField = (v: string) =>
+    v && !/^https?:\/\//i.test(v) ? `https://${v}` : v
+
 const samplePageInput = z.object({
     label: z.string().trim().min(1, 'Le libellé est obligatoire.').max(200),
-    url: z.string().trim().min(1, "L'URL de la page est obligatoire.").max(2000),
+    url: z
+        .string()
+        .trim()
+        .min(1, "L'URL de la page est obligatoire.")
+        .max(2000)
+        .transform(normalizeUrlField),
     type: z.enum(pageType.enumValues),
 })
 
@@ -165,7 +173,12 @@ const FINDING_STATUS_LABELS: Record<FindingStatus, string> = {
 const createAuditInput = z.object({
     clientId: z.string().min(1),
     name: z.string().trim().min(1, "Le nom de l'audit est obligatoire.").max(200),
-    siteUrl: z.string().trim().min(1, "L'URL du site est obligatoire.").max(2000),
+    siteUrl: z
+        .string()
+        .trim()
+        .min(1, "L'URL du site est obligatoire.")
+        .max(2000)
+        .transform(normalizeUrlField),
     // Au moins un auditeur assigné ; le formulaire pré-coche l'utilisateur courant.
     assigneeIds: z
         .array(z.string().min(1))
