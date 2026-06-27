@@ -1,3 +1,5 @@
+"use client"
+
 import type { ColumnDef } from "@tanstack/react-table"
 
 import {
@@ -5,30 +7,30 @@ import {
   createDateCell,
   createStatusBadge,
 } from "@/components/ui/data-table-cells"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 
 // Fabriques des colonnes d'audit communes aux trois tableaux (liste des audits,
-// audits récents du dashboard, audits d'une fiche client). Chaque fabrique est
-// générique sur la ligne tant qu'elle porte le champ requis et renvoie une
-// ColumnDef directement consommable par le DataTable. Les colonnes spécifiques à un
-// contexte (client, site, assignation, actions) restent définies sur place.
-//
-// Les colonnes utilisent `id` plutôt que `accessorKey` : le DataTable ne fait ni tri
-// ni filtre, l'accesseur n'est donc jamais lu — l'identifiant de colonne et le rendu
-// restent identiques à l'ancienne définition.
+// audits récents du dashboard, audits d'une fiche client).
 
 const DATE_COLUMN_HEADERS = {
   createdAt: "Date",
   updatedAt: "Dernière modification",
 } as const
 
-// Colonne « Nom de l'audit ». La navigation de ligne est portée par le DataTable
-// (lien étiré via getRowHref), la cellule reste donc un simple libellé en évidence.
-export function createAuditNameColumn<TData extends { name: string }>(opts: {
-  header?: string
-} = {}): ColumnDef<TData> {
+export function createAuditNameColumn<TData extends { name: string }>(
+  opts: { header?: string } = {},
+): ColumnDef<TData> {
   return {
     id: "name",
-    header: opts.header ?? "Nom de l'audit",
+    accessorFn: (row) => row.name,
+    enableSorting: true,
+    enableGlobalFilter: true,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={opts.header ?? "Nom de l'audit"}
+      />
+    ),
     cell: ({ row }) => (
       <span className="font-semibold text-foreground">{row.original.name}</span>
     ),
@@ -40,7 +42,16 @@ export function createAuditStatusColumn<
 >(): ColumnDef<TData> {
   return {
     id: "status",
-    header: "Statut",
+    accessorFn: (row) => row.status,
+    enableSorting: false,
+    enableGlobalFilter: false,
+    filterFn: (row, columnId, filterValue: string[]) => {
+      if (!filterValue?.length) return true
+      return filterValue.includes(row.getValue(columnId) as string)
+    },
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Statut" />
+    ),
     cell: ({ row }) => createStatusBadge(row.original.status),
   }
 }
@@ -50,12 +61,24 @@ export function createComplianceColumn<
 >(): ColumnDef<TData> {
   return {
     id: "complianceRate",
-    header: () => <div className="text-right">Taux de conformité</div>,
+    accessorFn: (row) => row.complianceRate,
+    enableSorting: true,
+    enableGlobalFilter: false,
+    header: ({ column }) => (
+      <div className="text-right">
+        <DataTableColumnHeader column={column} title="Taux de conformité" />
+      </div>
+    ),
     cell: ({ row }) => (
       <div className="text-right">
         {createComplianceCell(row.original.complianceRate)}
       </div>
     ),
+    sortingFn: (rowA, rowB) => {
+      const a = rowA.original.complianceRate ?? -1
+      const b = rowB.original.complianceRate ?? -1
+      return a - b
+    },
   }
 }
 
@@ -67,11 +90,21 @@ export function createAuditDateColumn<
 ): ColumnDef<TData> {
   return {
     id: field,
-    header,
+    accessorFn: (row) => row[field],
+    enableSorting: true,
+    enableGlobalFilter: false,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={header} />
+    ),
     cell: ({ row }) => (
       <span className="text-muted-foreground">
         {createDateCell(row.original[field])}
       </span>
     ),
+    sortingFn: (rowA, rowB) => {
+      const a = rowA.original[field]?.getTime() ?? 0
+      const b = rowB.original[field]?.getTime() ?? 0
+      return a - b
+    },
   }
 }

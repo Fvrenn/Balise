@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 
 import { auditColumns, type AuditListRow } from "./columns"
+import { AuditsTableToolbar } from "./audits-table-toolbar"
 
 interface AuditsTableProps {
   audits: AuditListRow[]
@@ -20,6 +21,7 @@ export function AuditsTable({ audits }: AuditsTableProps) {
       data={audits}
       getRowHref={(audit) => `/audits/${audit.id}`}
       emptyState={<NoAudits />}
+      toolbar={(table) => <AuditsTableToolbar table={table} />}
     />
   )
 }

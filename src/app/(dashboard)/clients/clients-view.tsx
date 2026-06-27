@@ -41,7 +41,7 @@ export function ClientsView({
             placeholder="Rechercher un client…"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="pl-8 bg-surface"
+            className="pl-8 bg-white"
           />
         </div>
         <ClientCreateDialog />

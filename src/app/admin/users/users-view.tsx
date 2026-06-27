@@ -5,7 +5,6 @@ import { Check, Loader2, Search, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { SERVER_DATA_STALE_TIME, trpc } from "@/trpc/react"
-import { HeaderActions } from "@/components/header-slot"
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -18,29 +17,20 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { DataTable } from "@/components/ui/data-table"
 import { createRelativeDate } from "@/components/ui/data-table-cells"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { FacetedFilterButton } from "@/components/ui/data-table-faceted-filter"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 import type { ColumnDef } from "@tanstack/react-table"
 import type { RouterOutputs } from "@/trpc/types"
 
 type AdminUser = RouterOutputs["admin"]["listUsers"][number]
 type DerivedRole = "admin" | "owner" | "auditor"
-type RoleFilter = "all" | DerivedRole
 type BadgeVariant = ComponentProps<typeof Badge>["variant"]
 
-const ROLE_FILTER_OPTIONS: { value: RoleFilter; label: string }[] = [
-  { value: "all", label: "Tous les rôles" },
+const ROLE_OPTIONS = [
   { value: "admin", label: "Admin" },
   { value: "owner", label: "Owner" },
   { value: "auditor", label: "Auditeur" },
@@ -53,13 +43,65 @@ const ROLE_BADGES: Record<DerivedRole, { label: string; variant: BadgeVariant }>
     auditor: { label: "Auditeur", variant: "outline" },
   }
 
-// Rôle effectif d'un utilisateur sur la plateforme. L'Admin Balise prime sur toute
-// appartenance ; sinon on lit le rôle de cabinet ; null pour un compte sans
-// rattachement (Owner en attente d'onboarding).
 function derivedRole(user: AdminUser): DerivedRole | null {
   if (user.isAdmin) return "admin"
   if (user.role === "owner" || user.role === "auditor") return user.role
   return null
+}
+
+interface UsersTableToolbarProps {
+  search: string
+  onSearchChange: (value: string) => void
+  roleFilter: DerivedRole[]
+  onRoleFilterChange: (value: DerivedRole[]) => void
+}
+
+function UsersTableToolbar({
+  search,
+  onSearchChange,
+  roleFilter,
+  onRoleFilterChange,
+}: UsersTableToolbarProps) {
+  const hasActiveFilters = search.length > 0 || roleFilter.length > 0
+
+  function clearFilters() {
+    onSearchChange("")
+    onRoleFilterChange([])
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="relative min-w-48 flex-1 max-w-sm">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          type="search"
+          placeholder="Rechercher par nom ou email…"
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="h-9 bg-white pl-9"
+        />
+      </div>
+
+      <FacetedFilterButton
+        title="Rôle"
+        options={ROLE_OPTIONS}
+        value={roleFilter}
+        onChange={(next) => onRoleFilterChange(next as DerivedRole[])}
+      />
+
+      {hasActiveFilters && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-9 px-2 text-muted-foreground"
+          onClick={clearFilters}
+        >
+          Réinitialiser
+          <X className="ml-1 h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  )
 }
 
 export function UsersView({
@@ -70,11 +112,8 @@ export function UsersView({
   currentUserId: string
 }) {
   const [search, setSearch] = useState("")
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all")
-  const [withoutCabinetOnly, setWithoutCabinetOnly] = useState(false)
+  const [roleFilter, setRoleFilter] = useState<DerivedRole[]>([])
 
-  // Semé côté serveur (aucun skeleton au montage) mais conservé en requête : la
-  // suppression invalide la liste et la vue se rafraîchit seule.
   const usersQuery = trpc.admin.listUsers.useQuery(undefined, {
     initialData: initialUsers,
     staleTime: SERVER_DATA_STALE_TIME,
@@ -90,17 +129,23 @@ export function UsersView({
       ) {
         return false
       }
-      if (roleFilter !== "all" && derivedRole(user) !== roleFilter) return false
-      if (withoutCabinetOnly && user.organizationName !== null) return false
+      if (roleFilter.length > 0) {
+        const role = derivedRole(user)
+        if (!role || !roleFilter.includes(role)) return false
+      }
       return true
     })
-  }, [usersQuery.data, search, roleFilter, withoutCabinetOnly])
+  }, [usersQuery.data, search, roleFilter])
 
   const columns = useMemo<ColumnDef<AdminUser>[]>(
     () => [
       {
+        id: "name",
         accessorKey: "name",
-        header: "Nom",
+        enableSorting: true,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Nom" />
+        ),
         cell: ({ row }) => (
           <span className="font-medium text-foreground">
             {row.original.name}
@@ -113,32 +158,52 @@ export function UsersView({
         ),
       },
       {
+        id: "email",
         accessorKey: "email",
-        header: "Email",
+        enableSorting: true,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Email" />
+        ),
         cell: ({ row }) => (
           <span className="text-muted-foreground">{row.original.email}</span>
         ),
       },
       {
         id: "cabinet",
-        header: "Cabinet",
+        enableSorting: false,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Cabinet" />
+        ),
         cell: ({ row }) => <CabinetCell user={row.original} />,
       },
       {
         id: "role",
-        header: "Rôle",
+        enableSorting: false,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Rôle" />
+        ),
         cell: ({ row }) => <RoleCell user={row.original} />,
       },
       {
+        id: "emailVerified",
         accessorKey: "emailVerified",
-        header: "Email vérifié",
+        enableSorting: true,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Email vérifié" />
+        ),
         cell: ({ row }) => (
           <EmailVerifiedCell verified={row.original.emailVerified} />
         ),
       },
       {
+        id: "createdAt",
         accessorKey: "createdAt",
-        header: "Membre depuis",
+        enableSorting: true,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Membre depuis" />
+        ),
+        sortingFn: (rowA, rowB) =>
+          rowA.original.createdAt.getTime() - rowB.original.createdAt.getTime(),
         cell: ({ row }) => (
           <span className="text-muted-foreground">
             {createRelativeDate(row.original.createdAt)}
@@ -147,6 +212,7 @@ export function UsersView({
       },
       {
         id: "actions",
+        enableSorting: false,
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
           <UserRowActions user={row.original} currentUserId={currentUserId} />
@@ -158,46 +224,6 @@ export function UsersView({
 
   return (
     <div className="space-y-6">
-      <HeaderActions>
-        <div className="relative w-64">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Rechercher par nom ou email…"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className="bg-surface pl-8"
-          />
-        </div>
-
-        <Select
-          items={ROLE_FILTER_OPTIONS}
-          value={roleFilter}
-          onValueChange={(value) => setRoleFilter(value as RoleFilter)}
-        >
-          <SelectTrigger className="w-44 bg-surface">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {ROLE_FILTER_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Label className="flex cursor-pointer items-center gap-2 font-normal text-muted-foreground">
-          <Checkbox
-            checked={withoutCabinetOnly}
-            onCheckedChange={(checked) =>
-              setWithoutCabinetOnly(checked === true)
-            }
-          />
-          Sans cabinet
-        </Label>
-      </HeaderActions>
-
       <div className="space-y-1">
         <h1 className="font-heading text-2xl font-bold text-foreground">
           Utilisateurs
@@ -208,16 +234,24 @@ export function UsersView({
         </p>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={filteredUsers}
-        isLoading={usersQuery.isLoading}
-        emptyState={
-          <span className="text-sm text-muted-foreground">
-            Aucun utilisateur trouvé
-          </span>
-        }
-      />
+      <div className="space-y-4">
+        <UsersTableToolbar
+          search={search}
+          onSearchChange={setSearch}
+          roleFilter={roleFilter}
+          onRoleFilterChange={setRoleFilter}
+        />
+        <DataTable
+          columns={columns}
+          data={filteredUsers}
+          isLoading={usersQuery.isLoading}
+          emptyState={
+            <span className="text-sm text-muted-foreground">
+              Aucun utilisateur trouvé
+            </span>
+          }
+        />
+      </div>
     </div>
   )
 }
@@ -260,8 +294,6 @@ function EmailVerifiedCell({ verified }: { verified: boolean }) {
   )
 }
 
-// Suppression réservée aux comptes non protégés : ni soi-même, ni un autre Admin
-// Balise (mêmes garde-fous côté serveur dans admin.deleteUser).
 function UserRowActions({
   user,
   currentUserId,

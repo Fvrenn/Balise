@@ -5,13 +5,18 @@ import Link from "next/link"
 import {
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
   useReactTable,
   type ColumnDef,
+  type ColumnFiltersState,
+  type SortingState,
+  type Table,
 } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
-  Table,
+  Table as TablePrimitive,
   TableBody,
   TableCell,
   TableHead,
@@ -32,6 +37,7 @@ interface DataTableProps<TData extends object> {
   // actions non navigantes (rendu accessible au clavier : role link + Entrée/Espace).
   getRowHref?: (row: TData) => string
   className?: string
+  toolbar?: (table: Table<TData>) => React.ReactNode
 }
 
 export function DataTable<TData extends object>({
@@ -42,24 +48,37 @@ export function DataTable<TData extends object>({
   onRowClick,
   getRowHref,
   className,
+  toolbar,
 }: DataTableProps<TData>) {
+  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [globalFilter, setGlobalFilter] = React.useState<string>("")
+
   const table = useReactTable({
     data,
     columns,
+    state: { sorting, columnFilters, globalFilter },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   })
 
   const rows = table.getRowModel().rows
   const isRowInteractive = Boolean(onRowClick) || Boolean(getRowHref)
 
   return (
-    <div className={cn("overflow-hidden rounded-lg border", className)}>
-      <Table>
+    <div className={cn("flex flex-col gap-4", className)}>
+      {toolbar?.(table)}
+      <div className="overflow-hidden rounded-lg border">
+        <TablePrimitive>
         <TableHeader className="bg-surface-2">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id} className="hover:bg-transparent">
               {headerGroup.headers.map((header) => (
-                <TableHead key={header.id} className="text-ink-3 px-3 py-4">
+                <TableHead key={header.id} className="px-3 py-4 text-xs font-medium uppercase text-ink-3">
                   {header.isPlaceholder
                     ? null
                     : flexRender(
@@ -143,7 +162,8 @@ export function DataTable<TData extends object>({
             })
           )}
         </TableBody>
-      </Table>
+        </TablePrimitive>
+      </div>
     </div>
   )
 }

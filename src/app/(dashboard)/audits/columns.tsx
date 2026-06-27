@@ -6,6 +6,7 @@ import {
   createAuditStatusColumn,
   createComplianceColumn,
 } from "@/components/audit/audit-column-helpers"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 
 import { AssigneesCell } from "./assignees-cell"
 
@@ -19,22 +20,36 @@ export type AuditListRow =
 export const auditColumns: ColumnDef<AuditListRow>[] = [
   createAuditNameColumn<AuditListRow>(),
   {
-    accessorKey: "clientName",
-    header: "Client",
+    id: "clientName",
+    accessorFn: (row) => row.clientName,
+    enableSorting: true,
+    enableGlobalFilter: true,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Client" />
+    ),
     cell: ({ row }) => (
       <span className="text-muted-foreground">{row.original.clientName}</span>
     ),
   },
   {
-    accessorKey: "siteUrl",
-    header: "Site audité",
+    id: "siteUrl",
+    accessorFn: (row) => row.siteUrl,
+    enableSorting: true,
+    enableGlobalFilter: true,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Site audité" />
+    ),
     cell: ({ row }) => (
       <span className="text-muted-foreground">{row.original.siteUrl}</span>
     ),
   },
   {
     id: "assignedTo",
-    header: "Assigné à",
+    enableSorting: false,
+    enableGlobalFilter: false,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Assigné à" />
+    ),
     cell: ({ row }) => (
       <AssigneesCell
         auditId={row.original.id}
