@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  createAssignedToColumn,
   createAuditDateColumn,
   createAuditNameColumn,
   createAuditStatusColumn,
@@ -43,20 +44,14 @@ export const auditColumns: ColumnDef<AuditListRow>[] = [
       <span className="text-muted-foreground">{row.original.siteUrl}</span>
     ),
   },
-  {
-    id: "assignedTo",
-    enableSorting: false,
-    enableGlobalFilter: false,
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Assigné à" />
-    ),
+  createAssignedToColumn<AuditListRow>({
     cell: ({ row }) => (
       <AssigneesCell
         auditId={row.original.id}
         assignees={row.original.assignees}
       />
     ),
-  },
+  }),
   createAuditStatusColumn<AuditListRow>(),
   createComplianceColumn<AuditListRow>(),
   createAuditDateColumn<AuditListRow>("updatedAt"),

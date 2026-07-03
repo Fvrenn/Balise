@@ -240,6 +240,9 @@ export function AuditHeader({
               <Link
                 key={tab.segment}
                 href={`/audits/${auditId}/${tab.segment}`}
+                // Route dynamique : sans prefetch explicite, Next ne précharge
+                // pas les données et chaque clic attend le serveur.
+                prefetch={true}
                 className={cn(
                   "-mb-px border-b-2 pb-2.5 pt-3 text-sm transition-colors",
                   isActive

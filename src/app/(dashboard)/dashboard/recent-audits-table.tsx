@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import {
+  createAssignedToColumn,
   createAuditDateColumn,
   createAuditNameColumn,
   createAuditStatusColumn,
@@ -28,11 +29,9 @@ const recentAuditColumns: ColumnDef<RecentAudit>[] = [
       <span className="text-muted-foreground">{row.original.clientName}</span>
     ),
   },
-  {
-    id: "assignedTo",
-    header: "Assigné à",
+  createAssignedToColumn<RecentAudit>({
     cell: ({ row }) => <AssigneeBadges assignees={row.original.assignees} />,
-  },
+  }),
   createAuditStatusColumn<RecentAudit>(),
   createComplianceColumn<RecentAudit>(),
   createAuditDateColumn<RecentAudit>("updatedAt"),

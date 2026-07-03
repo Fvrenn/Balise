@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { Search } from "lucide-react"
 import { toast } from "sonner"
 
@@ -64,19 +64,20 @@ export function CriteriaWorkspace({ auditId }: { auditId: string }) {
   // Onglet de page actif porté par l'URL (?page=…) pour permettre le lien direct ;
   // par défaut la première page de l'échantillon.
   const searchParams = useSearchParams()
-  const router = useRouter()
   const pathname = usePathname()
   const pageParam = searchParams.get("page")
   const activePageId =
     pages.find((page) => page.id === pageParam)?.id ?? pages[0]?.id ?? null
 
+  // replaceState natif (shallow routing) plutôt que router.replace : le paramètre
+  // n'est lu que côté client, un aller-retour serveur par clic serait inutile.
   const selectPage = useCallback(
     (pageId: string) => {
       const params = new URLSearchParams(searchParams.toString())
       params.set("page", pageId)
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+      window.history.replaceState(null, "", `${pathname}?${params.toString()}`)
     },
-    [pathname, router, searchParams],
+    [pathname, searchParams],
   )
 
   // État local optimiste : chaque interaction le met à jour immédiatement, la
@@ -451,7 +452,10 @@ export function CriteriaWorkspace({ auditId }: { auditId: string }) {
               return (
                 <section
                   key={section.themeId}
-                  className="overflow-hidden rounded-xl border border-border bg-surface"
+                  // content-visibility : le navigateur ne calcule pas le layout
+                  // des sections hors écran — le montage des ~106 critères au
+                  // changement de page ne bloque plus le rendu initial.
+                  className="overflow-hidden rounded-xl border border-border bg-surface [content-visibility:auto] [contain-intrinsic-size:auto_800px]"
                 >
                   <div className="flex items-center justify-between gap-4 border-b border-border bg-surface-2 px-4 py-3">
                     <h2 className="font-heading text-base font-semibold text-foreground">

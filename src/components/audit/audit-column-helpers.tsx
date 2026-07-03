@@ -17,6 +17,14 @@ const DATE_COLUMN_HEADERS = {
   updatedAt: "Dernière modification",
 } as const
 
+// Le tri alphabétique des statuts bruts ("completed" < "in_progress") ne
+// correspond ni au cycle de vie ni aux libellés français : on trie par étape.
+const AUDIT_STATUS_SORT_RANK: Record<string, number> = {
+  in_progress: 0,
+  pending_review: 1,
+  completed: 2,
+}
+
 export function createAuditNameColumn<TData extends { name: string }>(
   opts: { header?: string } = {},
 ): ColumnDef<TData> {
@@ -43,7 +51,7 @@ export function createAuditStatusColumn<
   return {
     id: "status",
     accessorFn: (row) => row.status,
-    enableSorting: false,
+    enableSorting: true,
     enableGlobalFilter: false,
     filterFn: (row, columnId, filterValue: string[]) => {
       if (!filterValue?.length) return true
@@ -53,6 +61,33 @@ export function createAuditStatusColumn<
       <DataTableColumnHeader column={column} title="Statut" />
     ),
     cell: ({ row }) => createStatusBadge(row.original.status),
+    sortingFn: (rowA, rowB) => {
+      const a = AUDIT_STATUS_SORT_RANK[rowA.original.status] ?? -1
+      const b = AUDIT_STATUS_SORT_RANK[rowB.original.status] ?? -1
+      return a - b
+    },
+  }
+}
+
+export function createAssignedToColumn<
+  TData extends { assignees: { name: string }[] },
+>(opts: { cell: ColumnDef<TData>["cell"] }): ColumnDef<TData> {
+  return {
+    id: "assignedTo",
+    accessorFn: (row) => row.assignees[0]?.name ?? "",
+    enableSorting: true,
+    enableGlobalFilter: false,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Assigné à" />
+    ),
+    cell: opts.cell,
+    // Le comparateur par défaut compare les points de code, ce qui classe les
+    // noms accentués ("Émile") après "Z" : on impose la collation française.
+    sortingFn: (rowA, rowB) => {
+      const a = rowA.original.assignees[0]?.name ?? ""
+      const b = rowB.original.assignees[0]?.name ?? ""
+      return a.localeCompare(b, "fr", { sensitivity: "base" })
+    },
   }
 }
 

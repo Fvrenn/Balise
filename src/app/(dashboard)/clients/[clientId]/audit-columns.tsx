@@ -5,6 +5,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import {
+  createAssignedToColumn,
   createAuditDateColumn,
   createAuditNameColumn,
   createAuditStatusColumn,
@@ -33,11 +34,9 @@ export const clientAuditColumns: ColumnDef<ClientAudit>[] = [
     header: "Contact",
     cell: ({ row }) => row.original.contactName ?? <EmptyValue />,
   },
-  {
-    id: "assignedTo",
-    header: "Assigné à",
+  createAssignedToColumn<ClientAudit>({
     cell: ({ row }) => <AssigneeBadges assignees={row.original.assignees} />,
-  },
+  }),
   createAuditStatusColumn<ClientAudit>(),
   createComplianceColumn<ClientAudit>(),
   createAuditDateColumn<ClientAudit>("createdAt"),
