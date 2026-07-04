@@ -5,6 +5,7 @@ import { cabinetRouter } from '@/server/routers/cabinet'
 import { clientsRouter } from '@/server/routers/clients'
 import { memberRouter } from '@/server/routers/member'
 import { onboardingRouter } from '@/server/routers/onboarding'
+import { scanRouter } from '@/server/routers/scan'
 import { teamRouter } from '@/server/routers/team'
 import { userRouter } from '@/server/routers/user'
 
@@ -15,6 +16,7 @@ export const appRouter = router({
     clients: clientsRouter,
     member: memberRouter,
     onboarding: onboardingRouter,
+    scan: scanRouter,
     team: teamRouter,
     user: userRouter,
 })

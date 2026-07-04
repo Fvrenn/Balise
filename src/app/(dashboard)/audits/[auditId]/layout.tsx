@@ -15,7 +15,7 @@ export default async function AuditLayout({
   const { auditId } = await params
 
   return (
-    <AuditLayoutClient>
+    <AuditLayoutClient auditId={auditId}>
       <div className="flex min-h-full flex-col">
         <Suspense fallback={<AuditHeaderSkeleton />}>
           <AuditHeaderSection auditId={auditId} />

@@ -60,6 +60,18 @@
   --color-nt: var(--nt);
   --color-nt-foreground: var(--nt-foreground);
 
+  /* Barre de progression indéterminée (scan en attente de son 1er événement) */
+  --animate-progress-indeterminate: progress-indeterminate 1.4s ease-in-out infinite;
+
+  @keyframes progress-indeterminate {
+    from {
+      translate: -100% 0;
+    }
+    to {
+      translate: 300% 0;
+    }
+  }
+
   /* Rayons */
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);

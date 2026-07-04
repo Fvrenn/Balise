@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:worker": "tsx watch --env-file .env.local src/worker/index.ts",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
+    "test:scan": "tsx --test src/worker/scanner/checks/checks.test.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate",

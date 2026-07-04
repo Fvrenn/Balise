@@ -7,6 +7,7 @@ import { toast } from "sonner"
 
 import { trpc } from "@/trpc/react"
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 import { AssigneeSelect } from "@/components/ui/assignee-select"
 import {
   HoverCard,
@@ -121,7 +122,8 @@ export function AssigneesCell({ auditId, assignees }: AssigneesCellProps) {
           </p>
           {membersQuery.isLoading ? (
             <div className="max-h-64 overflow-y-auto p-1">
-              <p className="px-2 py-1.5 text-sm text-muted-foreground">
+              <p className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
+                <Spinner />
                 Chargement…
               </p>
             </div>

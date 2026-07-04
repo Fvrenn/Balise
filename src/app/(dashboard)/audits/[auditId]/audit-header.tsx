@@ -21,6 +21,7 @@ import {
   STATUS_SEGMENTS,
 } from "@/components/audit/status-config"
 import { useHeaderCollapse } from "./header-collapse-context"
+import { ScanLauncher } from "./scan-launcher"
 
 const TABS = [
   { segment: "criteria", label: "Grille des critères" },
@@ -109,6 +110,7 @@ export function AuditHeader({
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
+                <ScanLauncher />
                 {isCompleted ? (
                   <Button
                     type="button"

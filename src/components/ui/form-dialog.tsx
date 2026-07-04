@@ -16,7 +16,9 @@ import {
 } from "@/components/ui/dialog"
 
 interface FormDialogProps {
-  trigger: React.ReactElement
+  // Optionnel : une modale pilotée par `open` (ouverte par du code, pas au clic)
+  // n'a pas d'élément déclencheur.
+  trigger?: React.ReactElement
   title: string
   description?: string
   children: React.ReactNode
@@ -56,7 +58,7 @@ export function FormDialog({
       onOpenChange={handleOpenChange}
       disablePointerDismissal={isLoading}
     >
-      <DialogTrigger render={trigger} />
+      {trigger && <DialogTrigger render={trigger} />}
 
       <DialogContent
         showCloseButton={false}

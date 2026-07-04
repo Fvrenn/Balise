@@ -2,10 +2,9 @@ import { Fragment, memo, useState } from "react"
 import { Copy } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import type { FindingStatus } from "@/lib/rgaa"
+import type { FindingSource, FindingStatus } from "@/lib/rgaa"
 import type { AuditDetail, AuditFindingRow } from "@/trpc/types"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Popover,
   PopoverContent,
@@ -16,6 +15,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { CriterionDetailDrawer } from "./criterion-detail-drawer"
 
 // État éditable d'un finding (pour une page donnée) côté client : source de vérité
 // optimiste de la grille. copiedFromPageId, non null, marque une valeur propagée
@@ -24,6 +24,9 @@ export interface FindingState {
   status: FindingStatus
   comment: string
   copiedFromPageId: string | null
+  // 'scan' = résultat posé par le scanner automatique (badge « Scanner ») ;
+  // repasse à 'manual' dès que l'auditrice modifie le finding.
+  source: FindingSource
 }
 
 type SamplePage = AuditDetail["pages"][number]
@@ -89,6 +92,7 @@ function CriterionRowComponent({
   onCommentChange,
   onCopyToPages,
 }: CriterionRowProps) {
+  const [detailOpen, setDetailOpen] = useState(false)
   const showNonConformeDetails = state.status === "non_conforme"
   const canCopy = state.status !== "pending"
   const otherPages = pages.filter((page) => page.id !== finding.pageId)
@@ -100,7 +104,16 @@ function CriterionRowComponent({
   return (
     <div className="space-y-3 border-b border-border px-4 py-4 last:border-b-0">
       <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 space-y-1">
+        {/* Zone cliquable : ouvre le panneau de détail du critère (sous-tests).
+            Bouton dédié pour rester accessible au clavier sans capturer les
+            clics sur les boutons de statut voisins. */}
+        <button
+          type="button"
+          onClick={() => setDetailOpen(true)}
+          className="group -mx-2 -my-1 min-w-0 cursor-pointer space-y-1 rounded-md px-2 py-1 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/40"
+          aria-haspopup="dialog"
+          title="Voir le détail du critère et ses tests"
+        >
           <div className="flex items-baseline gap-2">
             <span className="font-mono text-xs text-muted-foreground tabular-nums">
               {finding.criterionId}
@@ -109,12 +122,29 @@ function CriterionRowComponent({
               Test manuel
             </span>
           </div>
-          <p className="text-sm text-foreground">{finding.title}</p>
-        </div>
+          <p className="text-sm text-foreground group-hover:underline">
+            {finding.title}
+          </p>
+        </button>
 
         <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <div className="flex gap-1">
-            {STATUS_OPTIONS.map((option) => {
+          <div className="flex items-center gap-2">
+            {state.source === "scan" ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground" />
+                  }
+                >
+                  Scanner
+                </TooltipTrigger>
+                <TooltipContent>
+                  Résultat posé par le scan automatique — à vérifier.
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
+            <div className="flex gap-1">
+              {STATUS_OPTIONS.map((option) => {
               const isSelected = state.status === option.value
               const button = (
                 <button
@@ -141,6 +171,7 @@ function CriterionRowComponent({
                 </Tooltip>
               )
             })}
+            </div>
           </div>
 
           {sourceLabel || (canCopy && otherPages.length > 0) ? (
@@ -183,6 +214,14 @@ function CriterionRowComponent({
           />
         </div>
       ) : null}
+
+      <CriterionDetailDrawer
+        criterionId={finding.criterionId}
+        title={finding.title}
+        status={state.status}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
     </div>
   )
 }

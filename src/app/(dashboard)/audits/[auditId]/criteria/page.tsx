@@ -1,5 +1,7 @@
 import { Suspense } from "react"
 
+import { LoadingMessage } from "@/components/ui/spinner"
+
 import { CriteriaWorkspace } from "./criteria-workspace"
 
 export default async function CriteriaPage({
@@ -12,11 +14,7 @@ export default async function CriteriaPage({
   // alors une frontière Suspense au-dessus.
   return (
     <Suspense
-      fallback={
-        <p className="px-6 py-10 text-sm text-muted-foreground">
-          Chargement de la grille…
-        </p>
-      }
+      fallback={<LoadingMessage>Chargement de la grille…</LoadingMessage>}
     >
       <CriteriaWorkspace auditId={auditId} />
     </Suspense>

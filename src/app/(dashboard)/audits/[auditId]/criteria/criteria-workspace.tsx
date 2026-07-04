@@ -1,9 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { usePathname, useSearchParams } from "next/navigation"
-import { Search } from "lucide-react"
-import { toast } from "sonner"
+import { useCallback, useMemo, useRef, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { Check, ChevronDown, Search } from "lucide-react"
 
 import { trpc } from "@/trpc/react"
 import { cn } from "@/lib/utils"
@@ -17,27 +16,26 @@ import {
 } from "@/lib/rgaa"
 import type { AuditFindingRow } from "@/trpc/types"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  FacetedFilterButton,
+  type FacetedFilterOption,
+} from "@/components/ui/data-table-faceted-filter"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { LoadingMessage } from "@/components/ui/spinner"
+import { Switch } from "@/components/ui/switch"
+import { STATUS_LABELS, STATUS_SEGMENTS } from "@/components/audit/status-config"
 import { ThemeSidebar } from "@/components/audit/theme-sidebar"
 import { useHeaderCollapse } from "../header-collapse-context"
-import {
-  CriterionRow,
-  type FindingState,
-} from "./criterion-row"
+import { CriterionRow } from "./criterion-row"
+import { PageScanButton } from "./page-scan-button"
+import { SamplePageTabs } from "./sample-page-tabs"
+import { ThemeNaDialog } from "./theme-na-dialog"
+import { useFindingEditor } from "./use-finding-editor"
 
-const SAVE_DEBOUNCE_MS = 800
-
-type FilterTab = "all" | "auto" | "review" | "manual"
+const STATUS_FILTER_OPTIONS: FacetedFilterOption[] = STATUS_SEGMENTS.map(
+  (status) => ({ value: status, label: STATUS_LABELS[status] }),
+)
 
 interface ThemeSection {
   themeId: number
@@ -46,146 +44,50 @@ interface ThemeSection {
 }
 
 export function CriteriaWorkspace({ auditId }: { auditId: string }) {
-  const utils = trpc.useUtils()
-  const findingsQuery = trpc.audits.getFindings.useQuery({ auditId })
   const auditQuery = trpc.audits.getById.useQuery({ id: auditId })
   const { collapseOnce } = useHeaderCollapse()
   const autoCollapsedRef = useRef(false)
 
-  const findings = useMemo(
-    () => findingsQuery.data ?? [],
-    [findingsQuery.data],
-  )
+  const {
+    findings,
+    isLoading: findingsLoading,
+    stateById,
+    stateRef,
+    findingIdByCriterionPage,
+    patchFinding,
+    copyToPages,
+    markThemeNAForPages,
+  } = useFindingEditor(auditId)
+
   const pages = useMemo(
     () => auditQuery.data?.pages ?? [],
     [auditQuery.data?.pages],
   )
 
-  // Onglet de page actif porté par l'URL (?page=…) pour permettre le lien direct ;
-  // par défaut la première page de l'échantillon.
+  // Onglet de page actif porté par l'URL (?page=…) ; par défaut la première
+  // page de l'échantillon.
   const searchParams = useSearchParams()
-  const pathname = usePathname()
   const pageParam = searchParams.get("page")
   const activePageId =
     pages.find((page) => page.id === pageParam)?.id ?? pages[0]?.id ?? null
 
-  // replaceState natif (shallow routing) plutôt que router.replace : le paramètre
-  // n'est lu que côté client, un aller-retour serveur par clic serait inutile.
-  const selectPage = useCallback(
-    (pageId: string) => {
-      const params = new URLSearchParams(searchParams.toString())
-      params.set("page", pageId)
-      window.history.replaceState(null, "", `${pathname}?${params.toString()}`)
-    },
-    [pathname, searchParams],
-  )
-
-  // État local optimiste : chaque interaction le met à jour immédiatement, la
-  // sauvegarde réseau suit en arrière-plan (débounce). Clé = id de finding, donc
-  // une entrée par (critère, page).
-  const [stateById, setStateById] = useState<Map<string, FindingState>>(
-    () => new Map(),
-  )
-  const [filter, setFilter] = useState<FilterTab>("all")
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
+  const [showScanOnly, setShowScanOnly] = useState(false)
   const [search, setSearch] = useState("")
   const [activeThemeId, setActiveThemeId] = useState<number | null>(null)
   const [themeToConfirm, setThemeToConfirm] = useState<number | null>(null)
-  const [naPageIds, setNaPageIds] = useState<string[]>([])
-
-  // Miroir du state pour lire la dernière valeur dans les timers de sauvegarde.
-  const stateRef = useRef(stateById)
-  stateRef.current = stateById
-  const timersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>())
-
-  // Index (critère → page → id de finding) pour retrouver les findings cibles d'une
-  // propagation, et accès direct par id pour la page/critère source.
-  const findingById = useMemo(
-    () => new Map(findings.map((finding) => [finding.id, finding])),
-    [findings],
-  )
-  const findingIdByCriterionPage = useMemo(() => {
-    const byCriterion = new Map<string, Map<string, string>>()
-    for (const finding of findings) {
-      let byPage = byCriterion.get(finding.criterionId)
-      if (!byPage) {
-        byPage = new Map()
-        byCriterion.set(finding.criterionId, byPage)
-      }
-      byPage.set(finding.pageId, finding.id)
-    }
-    return byCriterion
-  }, [findings])
-
-  // Seed unique à l'arrivée des findings ; ensuite l'état local fait foi (on ne
-  // refetch jamais getFindings pour ne pas écraser des éditions en cours).
-  useEffect(() => {
-    if (findingsQuery.data && stateById.size === 0) {
-      const seeded = new Map<string, FindingState>()
-      for (const finding of findingsQuery.data) {
-        seeded.set(finding.id, {
-          status: finding.status,
-          comment: finding.comment ?? "",
-          copiedFromPageId: finding.copiedFromPageId ?? null,
-        })
-      }
-      setStateById(seeded)
-    }
-  }, [findingsQuery.data, stateById.size])
-
-  const saveFinding = trpc.audits.updateFinding.useMutation({
-    onSuccess: () => utils.audits.getById.invalidate({ id: auditId }),
-    onError: () => toast.error("La sauvegarde a échoué."),
-  })
-  const markThemeNA = trpc.audits.markThemeNA.useMutation({
-    onSuccess: () => utils.audits.getById.invalidate({ id: auditId }),
-    onError: () => toast.error("L'action a échoué."),
-  })
-  const copyFindingToPages = trpc.audits.copyFindingToPages.useMutation({
-    onSuccess: () => utils.audits.getById.invalidate({ id: auditId }),
-    onError: () => toast.error("La copie a échoué."),
-  })
-
-  const scheduleSave = useCallback(
-    (findingId: string) => {
-      const timers = timersRef.current
-      const existing = timers.get(findingId)
-      if (existing) clearTimeout(existing)
-      const timer = setTimeout(() => {
-        timers.delete(findingId)
-        const state = stateRef.current.get(findingId)
-        if (!state) return
-        saveFinding.mutate({
-          findingId,
-          status: state.status,
-          comment: state.comment || null,
-        })
-      }, SAVE_DEBOUNCE_MS)
-      timers.set(findingId, timer)
-    },
-    [saveFinding],
+  const [collapsedThemeIds, setCollapsedThemeIds] = useState<Set<number>>(
+    () => new Set(),
   )
 
-  // Vide les timers en attente au démontage.
-  useEffect(() => {
-    const timers = timersRef.current
-    return () => timers.forEach((timer) => clearTimeout(timer))
+  const toggleThemeCollapse = useCallback((themeId: number) => {
+    setCollapsedThemeIds((previous) => {
+      const next = new Set(previous)
+      if (next.has(themeId)) next.delete(themeId)
+      else next.add(themeId)
+      return next
+    })
   }, [])
-
-  // Édition manuelle : on met à jour l'état optimiste et on efface l'indicateur de
-  // propagation (le finding n'est plus une copie). La sauvegarde serveur fait de même.
-  const patchFinding = useCallback(
-    (findingId: string, patch: Partial<FindingState>) => {
-      setStateById((prev) => {
-        const current = prev.get(findingId)
-        if (!current) return prev
-        const next = new Map(prev)
-        next.set(findingId, { ...current, ...patch, copiedFromPageId: null })
-        return next
-      })
-      scheduleSave(findingId)
-    },
-    [scheduleSave],
-  )
 
   const handleStatusChange = useCallback(
     (findingId: string, status: FindingStatus) => {
@@ -201,38 +103,6 @@ export function CriteriaWorkspace({ auditId }: { auditId: string }) {
     (findingId: string, comment: string) =>
       patchFinding(findingId, { comment }),
     [patchFinding],
-  )
-
-  // Propagation : copie le statut + commentaire du finding source vers les findings
-  // des mêmes critères sur d'autres pages, en marquant copiedFromPageId. Met à jour
-  // l'état optimiste de toutes les pages cibles (sans déclencher la sauvegarde par
-  // page : la mutation copyFindingToPages persiste l'ensemble).
-  const handleCopyToPages = useCallback(
-    (sourceFindingId: string, targetPageIds: string[]) => {
-      const source = findingById.get(sourceFindingId)
-      const sourceState = stateRef.current.get(sourceFindingId)
-      if (!source || !sourceState) return
-      const byPage = findingIdByCriterionPage.get(source.criterionId)
-      if (!byPage) return
-
-      setStateById((prev) => {
-        const next = new Map(prev)
-        for (const pageId of targetPageIds) {
-          if (pageId === source.pageId) continue
-          const targetId = byPage.get(pageId)
-          if (!targetId || !next.has(targetId)) continue
-          next.set(targetId, {
-            status: sourceState.status,
-            comment: sourceState.comment,
-            copiedFromPageId: source.pageId,
-          })
-        }
-        return next
-      })
-
-      copyFindingToPages.mutate({ findingId: sourceFindingId, targetPageIds })
-    },
-    [copyFindingToPages, findingById, findingIdByCriterionPage],
   )
 
   // Avancement par thématique (statut global du critère, toutes pages agrégées) :
@@ -279,11 +149,19 @@ export function CriteriaWorkspace({ auditId }: { auditId: string }) {
   }, [activeFindings, stateById])
 
   const sections = useMemo<ThemeSection[]>(() => {
-    if (filter === "auto" || filter === "review") return []
-
     const query = search.trim().toLowerCase()
+    const selectedStatuses = new Set(statusFilter)
     const visible = activeFindings.filter((finding) => {
       if (activeThemeId !== null && finding.themeId !== activeThemeId) {
+        return false
+      }
+      // Statut et source vivent dans l'état client (stateById), qui prime sur
+      // la valeur serveur : un finding modifié à l'instant est filtré selon
+      // sa nouvelle valeur, sans attendre la sauvegarde.
+      const state = stateById.get(finding.id)
+      if (showScanOnly && state?.source !== "scan") return false
+      const status = state?.status ?? finding.status
+      if (selectedStatuses.size > 0 && !selectedStatuses.has(status)) {
         return false
       }
       if (!query) return true
@@ -307,87 +185,21 @@ export function CriteriaWorkspace({ auditId }: { auditId: string }) {
       section.findings.push(finding)
     }
     return [...byTheme.values()].sort((a, b) => a.themeId - b.themeId)
-  }, [activeFindings, filter, search, activeThemeId])
-
-  function openThemeNA(themeId: number) {
-    setNaPageIds(pages.map((page) => page.id))
-    setThemeToConfirm(themeId)
-  }
-
-  function confirmMarkThemeNA(themeId: number, pageIds: string[]) {
-    if (pageIds.length === 0) return
-    const pageSet = new Set(pageIds)
-    setStateById((prev) => {
-      const next = new Map(prev)
-      for (const finding of findings) {
-        if (finding.themeId !== themeId) continue
-        if (!pageSet.has(finding.pageId)) continue
-        const current = next.get(finding.id)
-        if (current) {
-          next.set(finding.id, {
-            ...current,
-            status: "non_applicable",
-            copiedFromPageId: null,
-          })
-        }
-      }
-      return next
-    })
-    markThemeNA.mutate({ auditId, themeId, pageIds })
-    setThemeToConfirm(null)
-  }
+  }, [activeFindings, statusFilter, showScanOnly, stateById, search, activeThemeId])
 
   if (
-    findingsQuery.isLoading ||
+    findingsLoading ||
     auditQuery.isLoading ||
     stateById.size === 0 ||
     !activePageId
   ) {
-    return (
-      <p className="px-6 py-10 text-sm text-muted-foreground">
-        Chargement de la grille…
-      </p>
-    )
+    return <LoadingMessage>Chargement de la grille…</LoadingMessage>
   }
-
-  const filterTabs: { key: FilterTab; label: string; count: number }[] = [
-    { key: "all", label: "Tous les critères", count: activeFindings.length },
-    { key: "auto", label: "Automatique", count: 0 },
-    { key: "review", label: "À revoir", count: 0 },
-    { key: "manual", label: "Test manuel", count: activeFindings.length },
-  ]
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)]">
       {/* Barre d'onglets de pages — le bg-background naturel de l'app crée le contraste */}
-      <div className="isolate px-6 pt-5 pb-0">
-        <div
-          className="flex w-full items-end gap-1.5 overflow-x-auto pl-3"
-          role="tablist"
-          aria-label="Pages de l'échantillon"
-        >
-          {pages.map((page) => {
-            const isActive = page.id === activePageId
-            return (
-              <button
-                key={page.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => selectPage(page.id)}
-                className={cn(
-                  "whitespace-nowrap text-sm font-medium transition-colors",
-                  isActive
-                    ? "tab-inverted-radius z-10 rounded-t-xl bg-surface px-6 py-3 text-foreground"
-                    : "mb-0.5 rounded-t-lg bg-secondary px-5 py-2.5 text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
-                )}
-              >
-                {page.label}
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      <SamplePageTabs pages={pages} activePageId={activePageId} />
 
       {/* Contenu principal — bg-surface (blanc) = même couleur que le tab actif */}
       <div className="flex gap-6 bg-surface px-6 py-6 flex-1 min-h-0">
@@ -402,42 +214,39 @@ export function CriteriaWorkspace({ auditId }: { auditId: string }) {
 
         <div className="min-w-0 flex-1 flex flex-col h-full">
           <div className="flex flex-wrap items-center justify-between gap-3 shrink-0 mb-4">
-            <div className="flex flex-wrap items-center gap-2">
-              {filterTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setFilter(tab.key)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
-                    filter === tab.key
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
+            <div className="flex flex-wrap items-center gap-4">
+              <FacetedFilterButton
+                title="Statut"
+                options={STATUS_FILTER_OPTIONS}
+                value={statusFilter}
+                onChange={setStatusFilter}
+              />
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="scan-only-filter"
+                  checked={showScanOnly}
+                  onCheckedChange={setShowScanOnly}
+                />
+                <Label
+                  htmlFor="scan-only-filter"
+                  className="cursor-pointer text-sm font-normal text-muted-foreground"
                 >
-                  {tab.label}
-                  <span
-                    className={cn(
-                      "text-xs tabular-nums",
-                      filter === tab.key
-                        ? "text-background/70"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
+                  Remplis par le scanner
+                </Label>
+              </div>
             </div>
 
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Rechercher un critère…"
-                className="pl-8"
-              />
+            <div className="flex flex-wrap items-center gap-2">
+              <PageScanButton pageId={activePageId} />
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Rechercher un critère…"
+                  className="pl-8"
+                />
+              </div>
             </div>
           </div>
 
@@ -449,52 +258,102 @@ export function CriteriaWorkspace({ auditId }: { auditId: string }) {
           ) : (
             sections.map((section) => {
               const progress = pageProgressById.get(section.themeId)
+              const isCollapsed = collapsedThemeIds.has(section.themeId)
+              const isSectionDone =
+                progress !== undefined &&
+                progress.total > 0 &&
+                treatedCount(progress) === progress.total
               return (
                 <section
                   key={section.themeId}
                   // content-visibility : le navigateur ne calcule pas le layout
                   // des sections hors écran — le montage des ~106 critères au
                   // changement de page ne bloque plus le rendu initial.
-                  className="overflow-hidden rounded-xl border border-border bg-surface [content-visibility:auto] [contain-intrinsic-size:auto_800px]"
+                  className={cn(
+                    "overflow-hidden rounded-xl border bg-surface [content-visibility:auto] [contain-intrinsic-size:auto_800px]",
+                    isSectionDone ? "border-success/40" : "border-border",
+                  )}
                 >
-                  <div className="flex items-center justify-between gap-4 border-b border-border bg-surface-2 px-4 py-3">
-                    <h2 className="font-heading text-base font-semibold text-foreground">
-                      {section.themeId}. {section.themeName}
-                      {progress ? (
-                        <span className="ml-2 text-sm font-normal text-muted-foreground tabular-nums">
-                          {treatedCount(progress)}/{progress.total}
+                  <div
+                    className={cn(
+                      "relative flex items-center justify-between gap-4 px-4 py-3",
+                      isSectionDone ? "bg-success/5" : "bg-surface-2",
+                      !isCollapsed &&
+                        (isSectionDone
+                          ? "border-b border-success/20"
+                          : "border-b border-border"),
+                    )}
+                  >
+                    {/* Le pseudo-élément after étend la zone cliquable du bouton à
+                        tout le bandeau ; le bouton N/A repasse au-dessus via
+                        position:relative. */}
+                    <button
+                      type="button"
+                      onClick={() => toggleThemeCollapse(section.themeId)}
+                      aria-expanded={!isCollapsed}
+                      className="group flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left outline-none after:absolute after:inset-0 focus-visible:ring-3 focus-visible:ring-ring/40"
+                    >
+                      <ChevronDown
+                        aria-hidden
+                        className={cn(
+                          "size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:text-foreground",
+                          isCollapsed && "-rotate-90",
+                        )}
+                      />
+                      <h2 className="font-heading text-base font-semibold text-foreground">
+                        {section.themeId}. {section.themeName}
+                        {progress ? (
+                          <span
+                            className={cn(
+                              "ml-2 text-sm font-normal tabular-nums",
+                              isSectionDone
+                                ? "font-medium text-success"
+                                : "text-muted-foreground",
+                            )}
+                          >
+                            {treatedCount(progress)}/{progress.total}
+                          </span>
+                        ) : null}
+                      </h2>
+                      {isSectionDone ? (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+                          <Check className="size-3" aria-hidden />
+                          Terminé
                         </span>
                       ) : null}
-                    </h2>
+                    </button>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => openThemeNA(section.themeId)}
+                      className="relative"
+                      onClick={() => setThemeToConfirm(section.themeId)}
                     >
                       Tout marquer N/A
                     </Button>
                   </div>
 
-                  <div>
-                    {section.findings.map((finding) => {
-                      const state = stateById.get(finding.id)
-                      if (!state) return null
-                      return (
-                        <CriterionRow
-                          key={finding.id}
-                          finding={finding}
-                          state={state}
-                          pages={pages}
-                          findingIdByCriterionPage={findingIdByCriterionPage}
-                          stateRef={stateRef}
-                          onStatusChange={handleStatusChange}
-                          onCommentChange={handleCommentChange}
-                          onCopyToPages={handleCopyToPages}
-                        />
-                      )
-                    })}
-                  </div>
+                  {isCollapsed ? null : (
+                    <div>
+                      {section.findings.map((finding) => {
+                        const state = stateById.get(finding.id)
+                        if (!state) return null
+                        return (
+                          <CriterionRow
+                            key={finding.id}
+                            finding={finding}
+                            state={state}
+                            pages={pages}
+                            findingIdByCriterionPage={findingIdByCriterionPage}
+                            stateRef={stateRef}
+                            onStatusChange={handleStatusChange}
+                            onCommentChange={handleCommentChange}
+                            onCopyToPages={copyToPages}
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
                 </section>
               )
             }))}
@@ -502,66 +361,19 @@ export function CriteriaWorkspace({ auditId }: { auditId: string }) {
         </div>
       </div>
 
-      <Dialog
+      <ThemeNaDialog
         open={themeToConfirm !== null}
+        pages={pages}
         onOpenChange={(open) => {
           if (!open) setThemeToConfirm(null)
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Marquer toute la thématique en N/A ?</DialogTitle>
-            <DialogDescription>
-              Tous les critères de cette thématique passeront en « non
-              applicable » sur les pages sélectionnées. Vous pourrez les
-              modifier individuellement ensuite.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Pages concernées
-            </p>
-            <div className="max-h-56 space-y-0.5 overflow-y-auto">
-              {pages.map((page) => (
-                <label
-                  key={page.id}
-                  className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-accent"
-                >
-                  <Checkbox
-                    checked={naPageIds.includes(page.id)}
-                    onCheckedChange={(checked) =>
-                      setNaPageIds((prev) =>
-                        checked
-                          ? [...prev, page.id]
-                          : prev.filter((id) => id !== page.id),
-                      )
-                    }
-                  />
-                  <span className="text-sm text-foreground">{page.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>
-              Annuler
-            </DialogClose>
-            <Button
-              type="button"
-              disabled={naPageIds.length === 0}
-              onClick={() => {
-                if (themeToConfirm !== null) {
-                  confirmMarkThemeNA(themeToConfirm, naPageIds)
-                }
-              }}
-            >
-              Marquer en N/A
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onConfirm={(pageIds) => {
+          if (themeToConfirm !== null) {
+            markThemeNAForPages(themeToConfirm, pageIds)
+          }
+          setThemeToConfirm(null)
+        }}
+      />
     </div>
   )
 }

@@ -32,6 +32,18 @@ export const findingStatus = pgEnum('finding_status', [
     'non_teste',       // s'applique mais n'a pas pu être testé (bug, accès impossible…)
 ])
 
+export const findingSource = pgEnum('finding_source', [
+    'manual',   // saisi par une auditrice
+    'scan',     // renseigné par le scanner automatique — à vérifier humainement
+])
+
+export const scanRunStatus = pgEnum('scan_run_status', [
+    'pending',     // job créé, pas encore pris par le worker
+    'running',
+    'completed',
+    'failed',
+])
+
 // ─── Better Auth — Core ───────────────────────────────────────────────────────
 // Ces tables sont gérées par Better Auth.
 // Le schéma doit correspondre exactement à ce qu'il attend.
@@ -301,6 +313,9 @@ export const auditFindings = pgTable(
         // l'indicateur « Propagé depuis … ». Repassé à null dès que l'auditrice modifie
         // ce finding à la main (saisie directe).
         copiedFromPageId: text('copied_from_page_id'),
+        // 'scan' quand le résultat vient du scanner automatique (badge « Scanner »
+        // dans la grille) ; repasse à 'manual' dès que l'auditrice modifie le finding.
+        source: findingSource('source').notNull().default('manual'),
         updatedBy: text('updated_by')
             .references(() => user.id, { onDelete: 'set null' }),
         updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -313,6 +328,41 @@ export const auditFindings = pgTable(
         auditCriterionPageUnique: uniqueIndex(
             'findings_audit_criterion_page_uidx',
         ).on(t.auditId, t.criterionId, t.pageId),
+    }),
+)
+
+// ─── Scans automatiques ───────────────────────────────────────────────────────
+// Un scan_run = une exécution du scanner de critères sur un audit. Créé par
+// scan.start (status 'pending'), pris en charge par le worker BullMQ qui le passe
+// en 'running' puis 'completed'/'failed'. pagesDone alimente la progression.
+
+export const scanRuns = pgTable(
+    'scan_runs',
+    {
+        id: text('id')
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        auditId: text('audit_id')
+            .notNull()
+            .references(() => audits.id, { onDelete: 'cascade' }),
+        // null = scan de toutes les pages de l'audit ; sinon, scan restreint à
+        // cette page de l'échantillon.
+        pageId: text('page_id').references(() => auditPages.id, {
+            onDelete: 'set null',
+        }),
+        status: scanRunStatus('status').notNull().default('pending'),
+        // true = le scan écrase les findings déjà renseignés ; false = il ne touche
+        // que les findings encore 'pending'.
+        overwrite: boolean('overwrite').notNull().default(false),
+        startedAt: timestamp('started_at').notNull().defaultNow(),
+        finishedAt: timestamp('finished_at'),
+        pagesTotal: integer('pages_total').notNull(),
+        pagesDone: integer('pages_done').notNull().default(0),
+        error: text('error'),
+        createdAt: timestamp('created_at').notNull().defaultNow(),
+    },
+    (t) => ({
+        auditIdx: index('scan_runs_audit_idx').on(t.auditId),
     }),
 )
 
@@ -359,6 +409,14 @@ export const auditsRelations = relations(audits, ({ one, many }) => ({
     assignees: many(auditAssignees),
     pages: many(auditPages),
     findings: many(auditFindings),
+    scanRuns: many(scanRuns),
+}))
+
+export const scanRunsRelations = relations(scanRuns, ({ one }) => ({
+    audit: one(audits, {
+        fields: [scanRuns.auditId],
+        references: [audits.id],
+    }),
 }))
 
 export const auditAssigneesRelations = relations(auditAssignees, ({ one }) => ({
@@ -419,3 +477,5 @@ export type NewAuditPage = typeof auditPages.$inferInsert
 export type RgaaCriterion = typeof rgaaCriteria.$inferSelect
 export type AuditFinding = typeof auditFindings.$inferSelect
 export type NewAuditFinding = typeof auditFindings.$inferInsert
+export type ScanRun = typeof scanRuns.$inferSelect
+export type NewScanRun = typeof scanRuns.$inferInsert

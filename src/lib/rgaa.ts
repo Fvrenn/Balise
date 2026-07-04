@@ -1,10 +1,11 @@
-import type { findingStatus } from '@/db/schema'
+import type { findingSource, findingStatus } from '@/db/schema'
 
 // Le référentiel RGAA 4.1.2 compte exactement 106 critères. Constante centrale :
 // elle sert au calcul du taux de conformité et aux scores affichés.
 export const RGAA_CRITERIA_COUNT = 106
 
 export type FindingStatus = (typeof findingStatus.enumValues)[number]
+export type FindingSource = (typeof findingSource.enumValues)[number]
 
 // Décompte des findings d'un audit (ou d'une thématique) par statut.
 export interface StatusCounts {
