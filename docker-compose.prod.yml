@@ -1,24 +1,49 @@
+# Déploiement via Dokploy (type « Docker Compose »).
+#
+# Deux conventions Dokploy structurent ce fichier :
+#   - les variables saisies dans l'UI sont écrites dans un .env à la racine du
+#     projet. Compose ne s'en sert que pour l'interpolation ${...} : chaque
+#     service doit donc lister explicitement ce qu'il reçoit, sinon les
+#     conteneurs démarrent sans aucune de ces variables ;
+#   - Traefik ne route que vers les conteneurs présents sur dokploy-network,
+#     réseau externe créé par l'installation de Dokploy. Un service absent de ce
+#     réseau répond « Bad Gateway » même s'il tourne parfaitement.
+#
+# Les noms de conteneurs sont laissés à Dokploy (préfixés par projet) : un
+# container_name figé entre en collision d'un déploiement à l'autre.
+
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
       target: runner
-    container_name: balise-app
+      # Les variables NEXT_PUBLIC_* sont inlinées dans le bundle client au moment
+      # du build : les passer seulement au runtime laisserait Sentry muet côté
+      # navigateur.
+      args:
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
     restart: unless-stopped
-    ports:
-      - "3004:3000"
     environment:
       - NODE_ENV=production
-    env_file:
-      - .env.production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL}
+      - NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
+      # Racine de stockage des fichiers téléversés (cf. src/lib/storage.ts) :
+      # dans le volume partagé, pas dans l'arborescence du code.
+      - UPLOADS_DIR=/app/uploads
     depends_on:
       - redis
     mem_limit: 1g
     networks:
+      # balise-network : accès à redis. dokploy-network : accès depuis Traefik,
+      # et vers les bases gérées par Dokploy.
       - balise-network
+      - dokploy-network
     volumes:
-      - /home/balise/uploads:/app/uploads
+      - balise_uploads:/app/uploads
 
   # Consomme la file de scans : sans lui, « Lancer le scan » reste indéfiniment
   # en attente côté application.
@@ -27,12 +52,14 @@ services:
       context: .
       dockerfile: Dockerfile
       target: worker
-    container_name: balise-worker
     restart: unless-stopped
+    # Le worker ne sert aucune requête HTTP : il lui faut la base, la file, et
+    # rien d'autre.
     environment:
       - NODE_ENV=production
-    env_file:
-      - .env.production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - UPLOADS_DIR=/app/uploads
     depends_on:
       - redis
     # Chromium est gourmand : deux scans concurrents (cf. src/worker/index.ts)
@@ -43,41 +70,28 @@ services:
     shm_size: 1gb
     networks:
       - balise-network
+      # Le worker écrit en base : il doit joindre le Postgres géré par Dokploy.
+      - dokploy-network
+    volumes:
+      # Le worker archive les captures et lit les mêmes uploads que l'app.
+      - balise_uploads:/app/uploads
 
   redis:
     image: redis:7-alpine
-    container_name: balise-redis
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:6380:6379"
     volumes:
       - redis_data:/data
     mem_limit: 128m
     networks:
       - balise-network
 
-  backup:
-    image: alpine:3.19
-    container_name: balise-backup
-    restart: unless-stopped
-    environment:
-      - PGPASSWORD=${DB_PASSWORD}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_NAME=${DB_NAME}
-    volumes:
-      - ./backups:/backups
-      - ./scripts/backup.sh:/backup.sh
-    entrypoint: >
-      sh -c "apk add --no-cache postgresql-client &&
-             crond -f -d 8"
-    networks:
-      - balise-network
-    mem_limit: 64m
-
 volumes:
   redis_data:
+  balise_uploads:
 
 networks:
   balise-network:
     driver: bridge
+  # Créé par l'installation de Dokploy : on s'y raccroche, on ne le crée pas.
+  dokploy-network:
+    external: true

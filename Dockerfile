@@ -19,6 +19,10 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Inliné dans le bundle client par Next : doit être présent au build, pas
+# seulement au runtime.
+ARG NEXT_PUBLIC_SENTRY_DSN
+ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
 RUN pnpm build
 
 # ─── Étape 4 : image de production ────────────────────────────────────────────
