@@ -1,11 +1,17 @@
-import { and, asc, eq, inArray } from 'drizzle-orm'
+import { and, asc, eq, inArray, sql } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import { protectedProcedure } from '@/server/trpc'
-import { auditFindings, findingStatus, rgaaCriteria } from '@/db/schema'
+import {
+    auditFindings,
+    auditPages,
+    findingStatus,
+    rgaaCriteria,
+} from '@/db/schema'
 import { assertAuditInOrg, assertFindingInOrg } from '@/server/audit-guards'
 import { recomputeComplianceRate } from '@/server/audit-compliance'
+import { loadOccurrences } from '@/server/audit-occurrences'
 
 // Procédures de la grille de critères : lecture et édition des findings d'un
 // audit (un finding = un critère × une page). Exposées sous `audits.*` — le
@@ -20,7 +26,7 @@ export const auditFindingProcedures = {
         .query(async ({ ctx, input }) => {
             await assertAuditInOrg(ctx.db, input.auditId, ctx.organizationId)
 
-            return ctx.db
+            const findings = await ctx.db
                 .select({
                     id: auditFindings.id,
                     status: auditFindings.status,
@@ -41,12 +47,53 @@ export const auditFindingProcedures = {
                 )
                 .where(eq(auditFindings.auditId, input.auditId))
                 .orderBy(asc(rgaaCriteria.sortOrder))
+
+            const occurrencesByFinding = await loadOccurrences(
+                ctx.db,
+                input.auditId,
+            )
+            return findings.map((finding) => ({
+                ...finding,
+                occurrences: occurrencesByFinding.get(finding.id) ?? [],
+            }))
         }),
 
     // Met à jour un finding (statut, commentaire) pour une page donnée puis recalcule
     // le taux de conformité de l'audit. Cœur de la sauvegarde automatique. Toute
     // édition manuelle efface l'indicateur de propagation : le finding n'est plus une
     // simple copie d'une autre page.
+    // Non-conformités sans commentaire : le RGAA veut une observation motivée,
+    // et un livrable qui dit « non conforme » sans dire pourquoi est inutilisable
+    // par le client. La page Livrables s'en sert pour avertir avant l'export.
+    listFindingsMissingComment: protectedProcedure
+        .input(z.object({ auditId: z.string().min(1) }))
+        .query(async ({ ctx, input }) => {
+            await assertAuditInOrg(ctx.db, input.auditId, ctx.organizationId)
+
+            return ctx.db
+                .select({
+                    findingId: auditFindings.id,
+                    criterionId: rgaaCriteria.id,
+                    title: rgaaCriteria.title,
+                    pageId: auditPages.id,
+                    pageLabel: auditPages.label,
+                })
+                .from(auditFindings)
+                .innerJoin(
+                    rgaaCriteria,
+                    eq(auditFindings.criterionId, rgaaCriteria.id),
+                )
+                .innerJoin(auditPages, eq(auditFindings.pageId, auditPages.id))
+                .where(
+                    and(
+                        eq(auditFindings.auditId, input.auditId),
+                        eq(auditFindings.status, 'non_conforme'),
+                        sql`coalesce(trim(${auditFindings.comment}), '') = ''`,
+                    ),
+                )
+                .orderBy(asc(auditPages.sortOrder), asc(rgaaCriteria.sortOrder))
+        }),
+
     updateFinding: protectedProcedure
         .input(
             z.object({

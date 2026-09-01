@@ -6,6 +6,7 @@ import {
     auditFindings,
     auditPages,
     audits,
+    findingOccurrences,
     rgaaCriteria,
     scanRuns,
 } from '@/db/schema'
@@ -19,6 +20,7 @@ import {
     AXE_RULES,
     runChecks,
     type CheckResult,
+    type Occurrence,
 } from '@/worker/scanner/checks'
 import { publishScanProgress } from '@/worker/scanner/progress'
 import type { ScanJobData } from '@/worker/queue'
@@ -208,6 +210,12 @@ function logPageResults(
         console.log(
             `[worker]   NC ${result.criterionId} : ${result.comment ?? 'sans détail'}`,
         )
+        for (const occurrence of result.occurrences ?? []) {
+            const where = occurrence.landmark ?? 'emplacement inconnu'
+            const what = occurrence.text ?? occurrence.html
+            console.log(`[worker]      · ${where} — ${occurrence.selector}`)
+            console.log(`[worker]        ${what}`)
+        }
     }
 }
 
@@ -266,9 +274,35 @@ async function applyCheckResults(input: {
                 updatedAt: new Date(),
             })
             .where(eq(auditFindings.id, finding.id))
+        await replaceOccurrences(finding.id, result.occurrences ?? [])
         updated++
     }
     return { updated, skipped }
+}
+
+// Les occurrences décrivent l'état de la page au dernier scan : on repart de zéro
+// à chaque passage plutôt que d'accumuler des éléments qui n'existent peut-être
+// plus. Un verdict conforme ou non applicable en efface donc les traces.
+async function replaceOccurrences(
+    findingId: string,
+    occurrences: Occurrence[],
+): Promise<void> {
+    await db
+        .delete(findingOccurrences)
+        .where(eq(findingOccurrences.findingId, findingId))
+    if (occurrences.length === 0) return
+
+    await db.insert(findingOccurrences).values(
+        occurrences.map((occurrence, index) => ({
+            findingId,
+            selector: occurrence.selector,
+            html: occurrence.html,
+            text: occurrence.text ?? null,
+            landmark: occurrence.landmark ?? null,
+            details: occurrence.details ?? null,
+            sortOrder: index,
+        })),
+    )
 }
 
 // Même recalcul que côté app (updateFinding & co) : le taux mis en cache sur

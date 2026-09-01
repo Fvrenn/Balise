@@ -3,7 +3,10 @@ import { after, before, describe, test } from 'node:test'
 import { AxeBuilder } from '@axe-core/playwright'
 import type { Browser } from 'playwright'
 
-import { launchScanBrowser } from '@/worker/scanner/browser'
+import {
+    launchScanBrowser,
+    SCANNER_INIT_SCRIPT,
+} from '@/worker/scanner/browser'
 import { AXE_RULES, runChecks } from '@/worker/scanner/checks'
 import type { CheckResult } from '@/worker/scanner/checks'
 
@@ -32,12 +35,9 @@ async function scanHtml(html: string): Promise<Verdicts> {
         // Aucune requête réseau ne doit sortir : les src factices échouent
         // proprement et un meta refresh ne peut pas naviguer hors de la fixture.
         await context.route('**/*', (route) => route.abort())
-        // Même shim que withPage (browser.ts) : tsx instrumente les callbacks
-        // sérialisés vers page.evaluate avec un helper __name absent du
-        // navigateur. En chaîne brute — un callback serait lui-même instrumenté.
-        await context.addInitScript(
-            "Object.defineProperty(globalThis, '__name', { value: function (target) { return target }, configurable: true })",
-        )
+        // Exactement le script du worker : les checks dépendent des helpers
+        // qu'il injecte (__name, __baliseElementInfo).
+        await context.addInitScript(SCANNER_INIT_SCRIPT)
         const page = await context.newPage()
         await page.setContent(html)
         const axeResults = await new AxeBuilder({ page })
@@ -84,6 +84,36 @@ function expectAucunVerdict(verdicts: Verdicts, criterionId: string): void {
         verdict,
         undefined,
         `critère ${criterionId} : aucun verdict attendu, obtenu "${verdict?.status}"`,
+    )
+}
+
+// Occurrences attachées à un verdict non conforme : les éléments fautifs que
+// l'auditrice doit pouvoir retrouver dans la page.
+function occurrencesOf(
+    verdicts: Verdicts,
+    criterionId: string,
+): NonNullable<CheckResult['occurrences']> {
+    const verdict = expectStatus(verdicts, criterionId, 'non_conforme')
+    const occurrences = verdict.occurrences ?? []
+    assert.ok(
+        occurrences.length > 0,
+        `critère ${criterionId} : aucune occurrence remontée`,
+    )
+    return occurrences
+}
+
+// Vérifie qu'une preuve précise accompagne la première occurrence du critère.
+function expectDetail(
+    verdicts: Verdicts,
+    criterionId: string,
+    key: string,
+    expected: RegExp,
+): void {
+    const [occurrence] = occurrencesOf(verdicts, criterionId)
+    const value = occurrence?.details?.[key]
+    assert.ok(
+        value !== undefined && expected.test(value),
+        `critère ${criterionId} : détail "${key}" attendu ${expected}, obtenu "${value ?? '(absent)'}"`,
     )
 }
 
@@ -895,5 +925,88 @@ describe('Précédence : non conforme > non applicable > conforme', () => {
     // À l'inverse, une violation prouvée doit gagner sur tout le reste.
     test('page avec violation : 1.1 reste non conforme malgré le verdict conforme candidat d’axe sur d’autres règles', () => {
         expectStatus(nonConforme, '1.1', 'non_conforme')
+    })
+})
+
+
+// ─── Localisation des non-conformités ─────────────────────────────────────────
+
+// Un compteur (« 2 champs sans indication ») n'est pas exploitable : chaque
+// verdict non conforme doit désigner les éléments fautifs, avec un sélecteur
+// utilisable dans le navigateur et les preuves propres au check.
+describe('Occurrences : où se trouve la non-conformité', () => {
+    test('1.2 — l’attribut contradictoire est nommé', () => {
+        expectDetail(
+            nonConforme,
+            '1.2',
+            'Alternatives en contradiction',
+            /aria-label/,
+        )
+    })
+    test('2.1 — le cadre sans title est désigné avec sa source', () => {
+        expectDetail(nonConforme, '2.1', 'Cadre', /^iframe$/)
+    })
+    test('4.10 — le média en autoplay est désigné', () => {
+        expectDetail(nonConforme, '4.10', 'Média', /^video$/)
+    })
+    test('5.8 — le marqueur de tableau de données est cité', () => {
+        expectDetail(
+            nonConforme,
+            '5.8',
+            'Marqueurs de tableau de données',
+            /<th>/,
+        )
+    })
+    test('8.2 — l’id dupliqué est nommé et l’occurrence pointe le doublon', () => {
+        expectDetail(nonConforme, '8.2', 'Identifiant dupliqué', /^bloc$/)
+        const [occurrence] = occurrencesOf(nonConforme, '8.2')
+        // Le sélecteur ne peut pas être #bloc : deux éléments le portent.
+        assert.ok(
+            occurrence !== undefined && !occurrence.selector.includes('#bloc'),
+            `sélecteur ambigu pour un id dupliqué : "${occurrence?.selector}"`,
+        )
+    })
+    test('8.8 — le code de langue invalide est cité', () => {
+        expectDetail(nonConforme, '8.8', 'Code de langue', /^zz$/)
+    })
+    test('8.9 — la balise dépréciée est nommée', () => {
+        expectDetail(nonConforme, '8.9', 'Balise dépréciée', /^<u>$/)
+    })
+    test('8.10 — la valeur de dir invalide est citée', () => {
+        expectDetail(nonConforme, '8.10', 'Valeur de dir', /^vertical$/)
+    })
+    test('9.1 — le titre qui saute un niveau est désigné', () => {
+        expectDetail(nonConforme, '9.1', 'Niveau de ce titre', /^h3$/)
+        expectDetail(nonConforme, '9.1', 'Niveau attendu', /^h2 au plus$/)
+    })
+    test('11.10 — le champ obligatoire et son étiquette sont cités', () => {
+        expectDetail(nonConforme, '11.10', 'Champ', /^nom$/)
+        expectDetail(nonConforme, '11.10', 'Étiquette', /« Nom »/)
+        expectDetail(nonConforme, '11.10', 'Marqueur technique', /^required$/)
+    })
+    test('13.8 — la balise en mouvement est nommée', () => {
+        expectDetail(nonConforme, '13.8', 'Balise', /^<marquee>$/)
+    })
+
+    test('le sélecteur remonté retrouve bien l’élément dans la page', async () => {
+        const verdicts = await scanHtml(
+            pageAvec('<p><u>souligné</u></p>'),
+        )
+        const [occurrence] = occurrencesOf(verdicts, '8.9')
+        assert.ok(occurrence)
+        assert.match(occurrence.selector, /u$/)
+        assert.equal(occurrence.text, 'souligné')
+        assert.equal(occurrence.landmark, 'Contenu principal')
+        assert.match(occurrence.html, /^<u>/)
+    })
+
+    test('une non-conformité répétée est plafonnée à 5 occurrences', async () => {
+        const verdicts = await scanHtml(
+            pageAvec('<p>' + '<u>x</u>'.repeat(9) + '</p>'),
+        )
+        const occurrences = occurrencesOf(verdicts, '8.9')
+        assert.equal(occurrences.length, 5)
+        // Le compte réel reste dans le commentaire du verdict.
+        expectNonConforme(verdicts, '8.9', /^9 balise\(s\)/)
     })
 })

@@ -67,10 +67,16 @@ export function AssigneesCell({ auditId, assignees }: AssigneesCellProps) {
     },
   })
 
-  const currentIds = assignees.map((assignee) => assignee.userId)
+  // Un auditeur retiré du cabinet n'a plus de case à cocher : le garder dans la
+  // sélection rendrait la réassignation impossible (updateAssignees refuse un
+  // assigné hors cabinet). L'ouverture du popover est donc l'occasion de le
+  // laisser tomber.
+  const activeIds = assignees
+    .filter((assignee) => assignee.isActiveMember)
+    .map((assignee) => assignee.userId)
   const isDirty =
-    selectedIds.length !== currentIds.length ||
-    selectedIds.some((id) => !currentIds.includes(id))
+    selectedIds.length !== activeIds.length ||
+    selectedIds.some((id) => !activeIds.includes(id))
 
   function handleEditorOpenChange(open: boolean) {
     setEditorOpen(open)
@@ -78,7 +84,7 @@ export function AssigneesCell({ auditId, assignees }: AssigneesCellProps) {
       // Carte au survol et popover d'édition ne s'affichent jamais ensemble.
       setHoverOpen(false)
       // (Re)part de l'assignation courante à chaque ouverture.
-      setSelectedIds(currentIds)
+      setSelectedIds(activeIds)
     }
   }
 

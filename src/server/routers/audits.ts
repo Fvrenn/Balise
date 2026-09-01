@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { protectedProcedure, router } from '@/server/trpc'
 import {
     auditAssignees,
+    auditExports,
     auditFindings,
     auditPages,
     audits,
@@ -19,7 +20,6 @@ import {
     assertMembersInOrg,
     buildAssigneeRows,
     getAssigneesByAudit,
-    type AssigneeSummary,
 } from '@/server/assignees'
 import { assertAuditInOrg } from '@/server/audit-guards'
 import {
@@ -27,11 +27,18 @@ import {
     getTreatedCountByAudit,
 } from '@/server/audit-compliance'
 import { buildAuditExcel } from '@/server/audit-excel'
+import { uploadFile } from '@/lib/storage'
+import { loadOccurrences } from '@/server/audit-occurrences'
 import { auditFindingProcedures } from '@/server/routers/audit-findings'
+import { auditPageProcedures } from '@/server/routers/audit-pages'
 
 // Router du cycle de vie des audits : listes, création, statut, assignés,
-// livrable Excel. Les procédures d'édition de la grille (findings) vivent dans
-// audit-findings.ts et sont fusionnées ici — l'API exposée reste `audits.*`.
+// livrable Excel. Les procédures d'édition de la grille (findings) et de
+// l'échantillon (pages) vivent dans audit-findings.ts et audit-pages.ts, et sont
+// fusionnées ici — l'API exposée reste `audits.*`.
+
+const XLSX_MIME =
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 const normalizeUrlField = (v: string) =>
     v && !/^https?:\/\//i.test(v) ? `https://${v}` : v
@@ -74,6 +81,7 @@ const updateAssigneesInput = z.object({
 
 export const auditsRouter = router({
     ...auditFindingProcedures,
+    ...auditPageProcedures,
 
     // Compteurs par statut pour les cartes de synthèse de la page Audits.
     stats: protectedProcedure.query(async ({ ctx }) => {
@@ -162,6 +170,7 @@ export const auditsRouter = router({
         const assigneesByAudit = await getAssigneesByAudit(
             ctx.db,
             rows.map((row) => row.id),
+            ctx.organizationId,
         )
         return rows.map((row) => ({
             ...row,
@@ -193,17 +202,6 @@ export const auditsRouter = router({
                             operators.asc(fields.sortOrder),
                         ],
                     },
-                    assignees: {
-                        orderBy: (fields, operators) => [
-                            operators.asc(fields.assignedAt),
-                            operators.asc(fields.id),
-                        ],
-                        with: {
-                            user: {
-                                columns: { id: true, name: true, email: true },
-                            },
-                        },
-                    },
                 },
             })
             if (!audit) {
@@ -216,13 +214,12 @@ export const auditsRouter = router({
             // Avancement par thématique : alimente la barre de progression du header
             // et le tableau de la vue d'ensemble.
             const themeProgress = await getThemeProgress(ctx.db, audit.id)
-            const assignees: AssigneeSummary[] = audit.assignees.map(
-                (assignee) => ({
-                    userId: assignee.user.id,
-                    name: assignee.user.name,
-                    email: assignee.user.email,
-                }),
+            const assigneesByAudit = await getAssigneesByAudit(
+                ctx.db,
+                [audit.id],
+                ctx.organizationId,
             )
+            const assignees = assigneesByAudit.get(audit.id) ?? []
             return { ...audit, assignees, themeProgress }
         }),
 
@@ -270,6 +267,7 @@ export const auditsRouter = router({
 
             const findings = await ctx.db
                 .select({
+                    id: auditFindings.id,
                     criterionId: rgaaCriteria.id,
                     themeName: rgaaCriteria.themeName,
                     title: rgaaCriteria.title,
@@ -286,13 +284,72 @@ export const auditsRouter = router({
                 .where(eq(auditFindings.auditId, input.auditId))
                 .orderBy(asc(rgaaCriteria.sortOrder))
 
-            return buildAuditExcel({
+            const occurrencesByFinding = await loadOccurrences(
+                ctx.db,
+                input.auditId,
+            )
+
+            const workbook = await buildAuditExcel({
                 clientName: audit.client.name,
-                findings,
+                findings: findings.map((finding) => ({
+                    ...finding,
+                    occurrences: occurrencesByFinding.get(finding.id) ?? [],
+                })),
                 pageLabelById: new Map(
                     audit.pages.map((page) => [page.id, page.label]),
                 ),
             })
+
+            // Le livrable est archivé tel qu'il a été transmis : la grille
+            // continue d'évoluer, le fichier daté ne bouge plus.
+            const buffer = Buffer.from(workbook.base64, 'base64')
+            const [archived] = await ctx.db
+                .insert(auditExports)
+                .values({
+                    auditId: input.auditId,
+                    filename: workbook.filename,
+                    storageKey: '',
+                    fileSize: buffer.byteLength,
+                    generatedBy: ctx.user.id,
+                })
+                .returning({ id: auditExports.id })
+            if (!archived) {
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: "L'archivage de l'export a échoué.",
+                })
+            }
+
+            // La clé porte l'id de la ligne : le fichier n'est atteignable qu'à
+            // travers la route authentifiée qui vérifie le cabinet.
+            const storageKey = `audit-exports/${input.auditId}/${archived.id}.xlsx`
+            await uploadFile(storageKey, buffer, XLSX_MIME)
+            await ctx.db
+                .update(auditExports)
+                .set({ storageKey })
+                .where(eq(auditExports.id, archived.id))
+
+            return workbook
+        }),
+
+    // Historique des livrables générés, du plus récent au plus ancien.
+    listExports: protectedProcedure
+        .input(z.object({ auditId: z.string().min(1) }))
+        .query(async ({ ctx, input }) => {
+            await assertAuditInOrg(ctx.db, input.auditId, ctx.organizationId)
+
+            return ctx.db
+                .select({
+                    id: auditExports.id,
+                    filename: auditExports.filename,
+                    fileSize: auditExports.fileSize,
+                    generatedAt: auditExports.generatedAt,
+                    generatedByName: user.name,
+                })
+                .from(auditExports)
+                .leftJoin(user, eq(auditExports.generatedBy, user.id))
+                .where(eq(auditExports.auditId, input.auditId))
+                .orderBy(desc(auditExports.generatedAt))
         }),
 
     // Membres du cabinet courant pour alimenter le sélecteur « Assigné à ».
@@ -422,9 +479,11 @@ export const auditsRouter = router({
 
             // Renvoie la liste fraîche et mise en forme pour que le client reflète
             // immédiatement le nouvel état.
-            const assigneesByAudit = await getAssigneesByAudit(ctx.db, [
-                input.auditId,
-            ])
+            const assigneesByAudit = await getAssigneesByAudit(
+                ctx.db,
+                [input.auditId],
+                ctx.organizationId,
+            )
             return {
                 auditId: input.auditId,
                 assignees: assigneesByAudit.get(input.auditId) ?? [],

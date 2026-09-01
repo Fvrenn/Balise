@@ -1,0 +1,83 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: balise-app
+    restart: unless-stopped
+    ports:
+      - "3004:3000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env.production
+    depends_on:
+      - redis
+    mem_limit: 1g
+    networks:
+      - balise-network
+    volumes:
+      - /home/balise/uploads:/app/uploads
+
+  # Consomme la file de scans : sans lui, « Lancer le scan » reste indéfiniment
+  # en attente côté application.
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    container_name: balise-worker
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env.production
+    depends_on:
+      - redis
+    # Chromium est gourmand : deux scans concurrents (cf. src/worker/index.ts)
+    # tiennent dans 2 Go, en dessous l'OOM killer coupe les pages en cours.
+    mem_limit: 2g
+    # Chromium a besoin de plus que les 64 Mo de /dev/shm par défaut, sinon les
+    # onglets crashent sur les pages lourdes.
+    shm_size: 1gb
+    networks:
+      - balise-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: balise-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - redis_data:/data
+    mem_limit: 128m
+    networks:
+      - balise-network
+
+  backup:
+    image: alpine:3.19
+    container_name: balise-backup
+    restart: unless-stopped
+    environment:
+      - PGPASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_NAME=${DB_NAME}
+    volumes:
+      - ./backups:/backups
+      - ./scripts/backup.sh:/backup.sh
+    entrypoint: >
+      sh -c "apk add --no-cache postgresql-client &&
+             crond -f -d 8"
+    networks:
+      - balise-network
+    mem_limit: 64m
+
+volumes:
+  redis_data:
+
+networks:
+  balise-network:
+    driver: bridge

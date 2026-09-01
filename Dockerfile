@@ -44,3 +44,26 @@ ENV HOSTNAME="0.0.0.0"
 
 # Le serveur Next.js standalone (généré par output: 'standalone' dans next.config.ts)
 CMD ["node", "server.js"]
+
+# ─── Étape 5 : worker de scan ─────────────────────────────────────────────────
+# Process séparé qui consomme la file BullMQ et pilote Chromium. Il ne peut pas
+# partager l'image ci-dessus : Playwright ne supporte pas Alpine (musl), et
+# l'image officielle Playwright embarque déjà le navigateur et ses dépendances
+# système. On l'exécute via tsx (les alias @/ du projet), d'où l'installation
+# des devDependencies.
+FROM mcr.microsoft.com/playwright:v1.60.0-noble AS worker
+WORKDIR /app
+ENV NODE_ENV=production
+RUN npm install -g pnpm
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# --prod=false : tsx est une devDependency et reste nécessaire à l'exécution.
+RUN pnpm install --frozen-lockfile --prod=false
+
+COPY tsconfig.json ./
+COPY src ./src
+
+# pwuser est fourni par l'image Playwright (non-root, propriétaire du cache des
+# navigateurs).
+USER pwuser
+CMD ["pnpm", "exec", "tsx", "src/worker/index.ts"]

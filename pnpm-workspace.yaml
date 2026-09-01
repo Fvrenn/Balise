@@ -7,3 +7,14 @@ allowBuilds:
   msgpackr-extract: false
   sharp: true
   unrs-resolver: false
+
+# Playwright et Tailwind (oxide) livrent des binaires par plateforme : on force
+# la résolution des variantes Linux x64/arm64 pour que l'image Docker dispose
+# des mêmes paquets que le poste de dev.
+supportedArchitectures:
+  os:
+    - current
+    - linux
+  cpu:
+    - x64
+    - arm64

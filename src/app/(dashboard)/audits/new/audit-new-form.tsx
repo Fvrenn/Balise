@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Check, Loader2, Plus, X } from "lucide-react"
+import { Check, CircleAlert, Loader2, Plus, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { trpc } from "@/trpc/react"
 import { cn } from "@/lib/utils"
+import {
+  missingRequiredLabels,
+  toCandidates,
+} from "@/lib/sample-detection"
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -69,6 +73,7 @@ export function AuditNewForm() {
   const [contactName, setContactName] = useState("")
   const [contactEmail, setContactEmail] = useState("")
   const [pages, setPages] = useState<SamplePageRow[]>(() => [createEmptyPage()])
+  const [missingPages, setMissingPages] = useState<string[]>([])
 
   // Par défaut, l'audit est assigné à l'utilisateur connecté dès que son id est
   // connu, tant qu'aucun auditeur n'a encore été sélectionné.
@@ -79,6 +84,27 @@ export function AuditNewForm() {
       )
     }
   }, [currentUserId])
+
+  // Détection de l'échantillon (spec 4.6, étape 2) : la proposition remplace la
+  // ligne vide initiale, l'auditrice l'ajuste ensuite comme une saisie manuelle.
+  const detectSample = trpc.audits.detectSample.useMutation({
+    onSuccess: (detection) => {
+      const candidates = toCandidates(detection)
+      setMissingPages(missingRequiredLabels(detection))
+      if (candidates.length === 0) return
+      setPages(
+        candidates.map((candidate) => ({
+          id: crypto.randomUUID(),
+          label: candidate.label,
+          url: candidate.url,
+          type: candidate.type,
+        })),
+      )
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
+  })
 
   const createAudit = trpc.audits.create.useMutation({
     onSuccess: (audit) => {
@@ -125,7 +151,9 @@ export function AuditNewForm() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (step === 1) {
-      if (step1Valid) setStep(2)
+      if (!step1Valid) return
+      setStep(2)
+      detectSample.mutate({ siteUrl: siteUrl.trim() })
       return
     }
     if (!pagesValid || isSubmitting) return
@@ -294,6 +322,29 @@ export function AuditNewForm() {
               moins une).
             </p>
           </div>
+
+          {detectSample.isPending && (
+            <p className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+              Analyse du site en cours…
+            </p>
+          )}
+
+          {missingPages.length > 0 && (
+            <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
+              <CircleAlert className="mt-0.5 size-4 shrink-0" />
+              <p>
+                Page{missingPages.length > 1 ? "s" : ""} attendue
+                {missingPages.length > 1 ? "s" : ""} par le RGAA et non trouvée
+                {missingPages.length > 1 ? "s" : ""} :{" "}
+                <span className="text-foreground">
+                  {missingPages.join(", ")}
+                </span>
+                . Ajoutez-les si elles existent — sinon vous pouvez lancer
+                l&apos;audit sans.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-3">
             {pages.map((page) => (

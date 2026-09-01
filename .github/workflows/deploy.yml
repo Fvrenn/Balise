@@ -1,0 +1,99 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: TypeScript
+        run: pnpm tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build check
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+          BETTER_AUTH_SECRET: "ci-placeholder-secret-longue-chaine"
+          BETTER_AUTH_URL: "http://localhost:3000"
+          DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
+          REDIS_URL: "redis://localhost:6379"
+
+      - name: Deploy sur VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            VERSION="${{ github.ref_name }}"
+            RELEASE_DIR="/home/balise/releases/${VERSION}"
+            SHARED_DIR="/home/balise/shared"
+            CURRENT_LINK="/home/balise/current"
+
+            echo "→ Déploiement de $VERSION"
+
+            # Créer les dossiers si nécessaire
+            mkdir -p "$RELEASE_DIR"
+            mkdir -p "$SHARED_DIR"
+
+            # Cloner uniquement ce tag
+            git clone --depth 1 --branch "$VERSION" \
+              git@github.com:Fvrenn/Balise.git "$RELEASE_DIR"
+
+            # Lier le .env.production partagé
+            ln -sf "$SHARED_DIR/.env.production" "$RELEASE_DIR/.env.production"
+
+            # Installer les dépendances
+            cd "$RELEASE_DIR"
+            pnpm install --frozen-lockfile
+
+            # Build Docker depuis le nouveau dossier
+            docker compose -f "$RELEASE_DIR/docker-compose.prod.yml" \
+              --project-name balise \
+              build --no-cache
+
+            # Arrêter et supprimer les containers existants par nom
+            docker stop balise-app balise-worker balise-redis balise-backup 2>/dev/null || true
+            docker rm balise-app balise-worker balise-redis balise-backup 2>/dev/null || true
+
+            # Changer le symlink de façon atomique
+            ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
+
+            # Relancer les containers
+            docker compose -f "$CURRENT_LINK/docker-compose.prod.yml" \
+              --project-name balise \
+              up -d
+
+            # Migrations et seed
+            cd "$CURRENT_LINK"
+            DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+              pnpm exec tsx src/db/seed.ts
+
+            # Garder seulement les 3 dernières releases
+            ls -dt /home/balise/releases/*/ | tail -n +4 | xargs rm -rf 2>/dev/null || true
+
+            # Nettoyer les images Docker orphelines
+            docker image prune -f
+
+            echo "✅ Déploiement $VERSION terminé"
+            echo "→ Current : $(readlink $CURRENT_LINK)"

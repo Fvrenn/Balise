@@ -15,6 +15,16 @@ const FINDING_STATUS_LABELS: Record<FindingStatus, string> = {
     non_teste: 'Non testé',
 }
 
+// Un élément précis relevé par le scanner à l'appui d'une non-conformité. Le
+// livrable client vaut surtout par ça : sans l'élément, « 2 textes au contraste
+// insuffisant » n'est pas actionnable par les développeurs du client.
+export interface ExcelOccurrence {
+    selector: string
+    text: string | null
+    landmark: string | null
+    details: Record<string, string> | null
+}
+
 export interface ExcelFindingRow {
     criterionId: string
     themeName: string
@@ -23,6 +33,7 @@ export interface ExcelFindingRow {
     status: FindingStatus
     comment: string | null
     pageId: string
+    occurrences: ExcelOccurrence[]
 }
 
 interface CriterionExport {
@@ -31,14 +42,34 @@ interface CriterionExport {
     title: string
     sortOrder: number
     statuses: FindingStatus[]
-    nonConformeDetails: { label: string; comment: string }[]
+    nonConformeDetails: {
+        label: string
+        comment: string
+        occurrences: ExcelOccurrence[]
+    }[]
+}
+
+// « Accueil · Pied de page — p.intro : « Nous contacter » (Ratio mesuré 2.7:1) »
+function formatOccurrence(
+    pageLabel: string,
+    occurrence: ExcelOccurrence,
+): string {
+    const where = occurrence.landmark
+        ? `${pageLabel} · ${occurrence.landmark}`
+        : pageLabel
+    const what = occurrence.text ? ` : « ${occurrence.text} »` : ''
+    const details = Object.entries(occurrence.details ?? {})
+        .map(([label, value]) => `${label} ${value}`)
+        .join(' · ')
+    const evidence = details === '' ? '' : ` (${details})`
+    return `${where} — ${occurrence.selector}${what}${evidence}`
 }
 
 // Choix d'export : une ligne par critère (106 lignes) avec son statut *global*
 // agrégé — le format le plus exploitable pour les devs du client, qui veulent
 // d'abord le verdict par critère. Le détail page par page des non-conformités
-// (page + commentaire) est reporté dans deux colonnes dédiées, pour rester
-// actionnable sans noyer la grille sous 106 × N lignes.
+// (pages, commentaire, éléments relevés) est reporté dans des colonnes dédiées,
+// pour rester actionnable sans noyer la grille sous 106 × N lignes.
 export async function buildAuditExcel(input: {
     clientName: string
     findings: ExcelFindingRow[]
@@ -64,6 +95,7 @@ export async function buildAuditExcel(input: {
                 label:
                     input.pageLabelById.get(finding.pageId) ?? finding.pageId,
                 comment: finding.comment ?? '',
+                occurrences: finding.occurrences,
             })
         }
     }
@@ -81,8 +113,14 @@ export async function buildAuditExcel(input: {
         { header: 'Statut global', key: 'status', width: 16 },
         { header: 'Pages non conformes', key: 'pages', width: 32 },
         { header: 'Détail des non-conformités', key: 'details', width: 60 },
+        { header: 'Éléments concernés', key: 'occurrences', width: 70 },
     ]
     sheet.getRow(1).font = { bold: true }
+    // Ces trois colonnes portent plusieurs lignes par cellule : sans retour à la
+    // ligne, le classeur est illisible pour le client.
+    for (const key of ['pages', 'details', 'occurrences']) {
+        sheet.getColumn(key).alignment = { wrapText: true, vertical: 'top' }
+    }
 
     for (const row of criterionRows) {
         const globalStatus = aggregateCriterionStatus(row.statuses)
@@ -93,6 +131,13 @@ export async function buildAuditExcel(input: {
             .filter((detail) => detail.comment.trim().length > 0)
             .map((detail) => `${detail.label} : ${detail.comment}`)
             .join('\n')
+        const occurrences = row.nonConformeDetails
+            .flatMap((detail) =>
+                detail.occurrences.map((occurrence) =>
+                    formatOccurrence(detail.label, occurrence),
+                ),
+            )
+            .join('\n')
         sheet.addRow({
             criterion: row.criterionId,
             theme: row.themeName,
@@ -100,6 +145,7 @@ export async function buildAuditExcel(input: {
             status: FINDING_STATUS_LABELS[globalStatus],
             pages: nonConformePages,
             details,
+            occurrences,
         })
     }
 

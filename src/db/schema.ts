@@ -6,6 +6,7 @@ import {
     timestamp,
     integer,
     index,
+    json,
     uniqueIndex,
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
@@ -331,6 +332,43 @@ export const auditFindings = pgTable(
     }),
 )
 
+// ─── Occurrences ──────────────────────────────────────────────────────────────
+// Les éléments précis de la page qui ont déclenché une non-conformité : sans eux
+// un finding dit « 2 textes au contraste insuffisant » sans dire lesquels, et
+// l'auditrice ne peut ni vérifier le verdict ni le transmettre au client.
+// Réécrites intégralement à chaque scan de la page (cascade depuis le finding).
+
+export const findingOccurrences = pgTable(
+    'finding_occurrences',
+    {
+        id: text('id')
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        findingId: text('finding_id')
+            .notNull()
+            .references(() => auditFindings.id, { onDelete: 'cascade' }),
+        // Sélecteur CSS de l'élément au moment du scan : fiable pour vérifier tout
+        // de suite, fragile après une refonte du site — d'où html et text conservés
+        // à côté, qui restent lisibles même quand le sélecteur ne matche plus.
+        selector: text('selector').notNull(),
+        html: text('html').notNull(),
+        // Texte visible de l'élément : ce que l'auditrice cherche des yeux sur la page.
+        text: text('text'),
+        // Repère de situation dans la page (« Pied de page », « Navigation principale »,
+        // ou à défaut le titre de section le plus proche).
+        landmark: text('landmark'),
+        // Données propres au check, prêtes à afficher (couleurs et ratio pour 3.2,
+        // attribut manquant ailleurs). Libre par construction : chaque critère a
+        // ses propres preuves à porter. json et non jsonb : l'ordre des clés est
+        // l'ordre de lecture voulu, or jsonb le réécrit.
+        details: json('details').$type<Record<string, string>>(),
+        sortOrder: integer('sort_order').notNull().default(0),
+    },
+    (t) => ({
+        findingIdx: index('finding_occurrences_finding_idx').on(t.findingId),
+    }),
+)
+
 // ─── Scans automatiques ───────────────────────────────────────────────────────
 // Un scan_run = une exécution du scanner de critères sur un audit. Créé par
 // scan.start (status 'pending'), pris en charge par le worker BullMQ qui le passe
@@ -363,6 +401,34 @@ export const scanRuns = pgTable(
     },
     (t) => ({
         auditIdx: index('scan_runs_audit_idx').on(t.auditId),
+    }),
+)
+
+// ─── Livrables générés ────────────────────────────────────────────────────────
+// Chaque export produit un fichier archivé : l'auditrice retrouve ce qu'elle a
+// effectivement transmis au client, même après avoir continué à modifier la
+// grille. Le fichier n'est donc pas un cache — il fige un état daté.
+
+export const auditExports = pgTable(
+    'audit_exports',
+    {
+        id: text('id')
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        auditId: text('audit_id')
+            .notNull()
+            .references(() => audits.id, { onDelete: 'cascade' }),
+        filename: text('filename').notNull(),
+        // Clé de stockage (cf. @/lib/storage) : disque en V1, R2 ensuite.
+        storageKey: text('storage_key').notNull(),
+        fileSize: integer('file_size').notNull(),
+        generatedBy: text('generated_by').references(() => user.id, {
+            onDelete: 'set null',
+        }),
+        generatedAt: timestamp('generated_at').notNull().defaultNow(),
+    },
+    (t) => ({
+        auditIdx: index('audit_exports_audit_idx').on(t.auditId),
     }),
 )
 
@@ -442,7 +508,17 @@ export const rgaaCriteriaRelations = relations(rgaaCriteria, ({ many }) => ({
     findings: many(auditFindings),
 }))
 
-export const auditFindingsRelations = relations(auditFindings, ({ one }) => ({
+export const findingOccurrencesRelations = relations(
+    findingOccurrences,
+    ({ one }) => ({
+        finding: one(auditFindings, {
+            fields: [findingOccurrences.findingId],
+            references: [auditFindings.id],
+        }),
+    }),
+)
+
+export const auditFindingsRelations = relations(auditFindings, ({ one, many }) => ({
     audit: one(audits, {
         fields: [auditFindings.auditId],
         references: [audits.id],
@@ -459,6 +535,7 @@ export const auditFindingsRelations = relations(auditFindings, ({ one }) => ({
         fields: [auditFindings.updatedBy],
         references: [user.id],
     }),
+    occurrences: many(findingOccurrences),
 }))
 
 // ─── Types inférés ────────────────────────────────────────────────────────────
@@ -478,4 +555,8 @@ export type RgaaCriterion = typeof rgaaCriteria.$inferSelect
 export type AuditFinding = typeof auditFindings.$inferSelect
 export type NewAuditFinding = typeof auditFindings.$inferInsert
 export type ScanRun = typeof scanRuns.$inferSelect
+export type FindingOccurrence = typeof findingOccurrences.$inferSelect
+export type NewFindingOccurrence = typeof findingOccurrences.$inferInsert
 export type NewScanRun = typeof scanRuns.$inferInsert
+export type AuditExport = typeof auditExports.$inferSelect
+export type NewAuditExport = typeof auditExports.$inferInsert

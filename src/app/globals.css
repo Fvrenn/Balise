@@ -55,6 +55,8 @@
   --color-sidebar-muted: var(--sidebar-muted);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-na: var(--na);
   --color-na-foreground: var(--na-foreground);
   --color-nt: var(--nt);
@@ -140,6 +142,9 @@
     --sidebar-muted: #65747f;
 
     /* Statuts audit */
+    --warning: #a1560a;
+    /* ambre foncé : alerte non bloquante, lisible sur fond clair (ratio > 4.5:1) */
+    --warning-foreground: #ffffff;
     --success: #006d42;
     /* #047857 conforme */
     --success-foreground: #ffffff;

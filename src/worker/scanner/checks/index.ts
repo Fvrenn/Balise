@@ -31,14 +31,18 @@ import {
     decorativeImagesCheck,
     imagesAlternativesCheck,
 } from '@/worker/scanner/checks/images'
-import type { Check, CheckResult } from '@/worker/scanner/checks/types'
+import type {
+    Check,
+    CheckResult,
+    Occurrence,
+} from '@/worker/scanner/checks/types'
 
 // Composition et exécution des checks automatiques RGAA. Les checks eux-mêmes
 // vivent par famille : axe-checks (règles axe → critères), applicability
 // (sujets absents → N/A), lang (8.3/8.4/8.8) et dom-checks (le reste du DOM).
 
 export { AXE_RULES }
-export type { CheckResult }
+export type { CheckResult, Occurrence }
 
 const ALL_CHECKS: Check[] = [
     applicabilityCheck,

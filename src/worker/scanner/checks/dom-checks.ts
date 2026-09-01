@@ -1,9 +1,16 @@
+import {
+    buildOccurrences,
+    type CollectedElement,
+} from '@/worker/scanner/checks/occurrences'
 import type { Check } from '@/worker/scanner/checks/types'
 
 // Checks DOM purs (page.evaluate), hors langue et images — un check par facette
 // automatisable du référentiel.
 // Contrainte : page.evaluate sérialise les callbacks vers le navigateur — ils
-// doivent rester autonomes, sans fonction interne nommée (cf. shim de browser.ts).
+// doivent rester autonomes, sans fonction interne nommée. Les seuls appels
+// autorisés sont les helpers injectés par SCANNER_INIT_SCRIPT (browser.ts),
+// dont __baliseElementInfo qui décrit un élément fautif pour en faire une
+// occurrence.
 
 // 2.1 — Titre de cadre : le test 2.1.1 exige un attribut title sur chaque
 // iframe/frame — un aria-label ne suffit pas pour le RGAA. Les cadres masqués
@@ -11,24 +18,29 @@ import type { Check } from '@/worker/scanner/checks/types'
 export const frameTitleCheck: Check = {
     name: 'titres de cadres 2.1',
     run: async ({ page }) => {
-        const count = await page.evaluate(
-            () =>
-                Array.from(
-                    document.querySelectorAll('iframe, frame'),
-                ).filter(
+        const untitledFrames = await page.evaluate(() =>
+            Array.from(document.querySelectorAll('iframe, frame'))
+                .filter(
                     (frame) =>
                         frame.getAttribute('aria-hidden') !== 'true' &&
                         !frame.hasAttribute('hidden') &&
                         getComputedStyle(frame).display !== 'none' &&
                         (frame.getAttribute('title') ?? '').trim() === '',
-                ).length,
+                )
+                .map((frame) =>
+                    __baliseElementInfo(frame, {
+                        Cadre: frame.tagName.toLowerCase(),
+                        Source: frame.getAttribute('src') ?? 'aucun attribut src',
+                    }),
+                ),
         )
-        if (count > 0) {
+        if (untitledFrames.length > 0) {
             return [
                 {
                     criterionId: '2.1',
                     status: 'non_conforme',
-                    comment: `${count} cadre(s) <iframe> sans attribut title (test 2.1.1 — l'attribut title est requis, un aria-label ne suffit pas)`,
+                    comment: `${untitledFrames.length} cadre(s) <iframe> sans attribut title (test 2.1.1 — l'attribut title est requis, un aria-label ne suffit pas)`,
+                    occurrences: await buildOccurrences(page, untitledFrames),
                 },
             ]
         }
@@ -42,20 +54,32 @@ export const frameTitleCheck: Check = {
 export const autoplayCheck: Check = {
     name: 'sons automatiques 4.10',
     run: async ({ page }) => {
-        const count = await page.evaluate(
-            () =>
-                Array.from(
-                    document.querySelectorAll<HTMLMediaElement>(
-                        'audio[autoplay], video[autoplay]',
-                    ),
-                ).filter((media) => !media.muted && !media.controls).length,
+        const noisyMedia = await page.evaluate(() =>
+            Array.from(
+                document.querySelectorAll<HTMLMediaElement>(
+                    'audio[autoplay], video[autoplay]',
+                ),
+            )
+                .filter((media) => !media.muted && !media.controls)
+                .map((media) =>
+                    __baliseElementInfo(media, {
+                        Média: media.tagName.toLowerCase(),
+                        Source:
+                            media.getAttribute('src') ??
+                            media
+                                .querySelector('source')
+                                ?.getAttribute('src') ??
+                            'source définie en JavaScript',
+                    }),
+                ),
         )
-        if (count === 0) return []
+        if (noisyMedia.length === 0) return []
         return [
             {
                 criterionId: '4.10',
                 status: 'non_conforme',
-                comment: `${count} média(s) en lecture automatique avec du son, sans contrôle utilisateur (autoplay sans controls ni muted)`,
+                comment: `${noisyMedia.length} média(s) en lecture automatique avec du son, sans contrôle utilisateur (autoplay sans controls ni muted)`,
+                occurrences: await buildOccurrences(page, noisyMedia),
             },
         ]
     },
@@ -70,26 +94,44 @@ export const autoplayCheck: Check = {
 export const layoutTablesCheck: Check = {
     name: 'tableaux de mise en forme 5.8',
     run: async ({ page }) => {
-        const count = await page.evaluate(
-            () =>
-                Array.from(
-                    document.querySelectorAll(
-                        'table[role="presentation"], table[role="none"]',
-                    ),
-                ).filter(
-                    (table) =>
-                        (table.getAttribute('summary') ?? '').trim() !== '' ||
-                        table.querySelector(
-                            'th, caption, thead, tfoot, [scope], [headers], [axis], [role="rowheader"], [role="columnheader"]',
-                        ) !== null,
-                ).length,
-        )
-        if (count === 0) return []
+        const dataLikeTables = await page.evaluate(() => {
+            const tables = Array.from(
+                document.querySelectorAll(
+                    'table[role="presentation"], table[role="none"]',
+                ),
+            )
+
+            const collected: CollectedElement[] = []
+            for (const table of tables) {
+                const summary = (table.getAttribute('summary') ?? '').trim()
+                const dataElement = table.querySelector(
+                    'th, caption, thead, tfoot, [scope], [headers], [axis], [role="rowheader"], [role="columnheader"]',
+                )
+                if (summary === '' && !dataElement) continue
+
+                const reasons: string[] = []
+                if (summary !== '') {
+                    reasons.push(`attribut summary (« ${summary.slice(0, 80)} »)`)
+                }
+                if (dataElement) {
+                    reasons.push(`<${dataElement.tagName.toLowerCase()}>`)
+                }
+                collected.push(
+                    __baliseElementInfo(table, {
+                        'Role déclaré': table.getAttribute('role') ?? '',
+                        'Marqueurs de tableau de données': reasons.join(', '),
+                    }),
+                )
+            }
+            return collected
+        })
+        if (dataLikeTables.length === 0) return []
         return [
             {
                 criterionId: '5.8',
                 status: 'non_conforme',
-                comment: `${count} tableau(x) de mise en forme (role="presentation") utilisant des éléments ou attributs de tableau de données (summary, caption, th, thead, tfoot, scope, headers, axis ou role rowheader/columnheader) — test 5.8.1`,
+                comment: `${dataLikeTables.length} tableau(x) de mise en forme (role="presentation") utilisant des éléments ou attributs de tableau de données (summary, caption, th, thead, tfoot, scope, headers, axis ou role rowheader/columnheader) — test 5.8.1`,
+                occurrences: await buildOccurrences(page, dataLikeTables),
             },
         ]
     },
@@ -142,24 +184,42 @@ export const duplicateIdsCheck: Check = {
     name: 'ids dupliqués 8.2',
     run: async ({ page }) => {
         const duplicates = await page.evaluate(() => {
-            const counts = new Map<string, number>()
+            const groups = new Map<string, Element[]>()
             for (const element of Array.from(
                 document.querySelectorAll('[id]'),
             )) {
                 if (!element.id) continue
-                counts.set(element.id, (counts.get(element.id) ?? 0) + 1)
+                const group = groups.get(element.id)
+                if (group) group.push(element)
+                else groups.set(element.id, [element])
             }
-            return Array.from(counts.entries())
-                .filter(([, count]) => count > 1)
-                .map(([id]) => id)
+
+            const ids: string[] = []
+            const collected: CollectedElement[] = []
+            for (const [id, elements] of Array.from(groups.entries())) {
+                if (elements.length < 2) continue
+                ids.push(id)
+                // On pointe le doublon, pas le premier porteur : c'est lui qui
+                // est en trop dans le document.
+                const duplicate = elements[1]
+                if (!duplicate) continue
+                collected.push(
+                    __baliseElementInfo(duplicate, {
+                        'Identifiant dupliqué': id,
+                        Occurrences: `${elements.length} éléments portent cet id`,
+                    }),
+                )
+            }
+            return { ids, collected }
         })
-        if (duplicates.length === 0) return []
-        const sample = duplicates.slice(0, 5).join(', ')
+        if (duplicates.ids.length === 0) return []
+        const sample = duplicates.ids.slice(0, 5).join(', ')
         return [
             {
                 criterionId: '8.2',
                 status: 'non_conforme',
-                comment: `${duplicates.length} id dupliqué(s) dans le document (code source invalide) : ${sample}${duplicates.length > 5 ? '…' : ''}`,
+                comment: `${duplicates.ids.length} id dupliqué(s) dans le document (code source invalide) : ${sample}${duplicates.ids.length > 5 ? '…' : ''}`,
+                occurrences: await buildOccurrences(page, duplicates.collected),
             },
         ]
     },
@@ -192,18 +252,24 @@ export const pageTitleCheck: Check = {
 export const presentationalTagsCheck: Check = {
     name: 'balises de présentation 8.9',
     run: async ({ page }) => {
-        const count = await page.evaluate(
-            () =>
+        const deprecatedTags = await page.evaluate(() =>
+            Array.from(
                 document.querySelectorAll(
                     'basefont, big, blink, center, font, s, strike, tt, u',
-                ).length,
+                ),
+            ).map((element) =>
+                __baliseElementInfo(element, {
+                    'Balise dépréciée': `<${element.tagName.toLowerCase()}>`,
+                }),
+            ),
         )
-        if (count === 0) return []
+        if (deprecatedTags.length === 0) return []
         return [
             {
                 criterionId: '8.9',
                 status: 'non_conforme',
-                comment: `${count} balise(s) de présentation dépréciée(s) détectée(s) (u, font, big, center, s, strike, tt, blink ou basefont) — la mise en forme relève du CSS (test 8.9.1)`,
+                comment: `${deprecatedTags.length} balise(s) de présentation dépréciée(s) détectée(s) (u, font, big, center, s, strike, tt, blink ou basefont) — la mise en forme relève du CSS (test 8.9.1)`,
+                occurrences: await buildOccurrences(page, deprecatedTags),
             },
         ]
     },
@@ -215,20 +281,33 @@ export const presentationalTagsCheck: Check = {
 export const readingDirectionCheck: Check = {
     name: 'sens de lecture 8.10',
     run: async ({ page }) => {
-        const values = await page.evaluate(() =>
-            Array.from(document.querySelectorAll('[dir]')).map(
-                (element) => element.getAttribute('dir') ?? '',
-            ),
-        )
-        const invalid = values.filter(
-            (value) => !['ltr', 'rtl', 'auto'].includes(value.toLowerCase()),
-        )
-        if (invalid.length === 0) return []
+        const invalid = await page.evaluate(() => {
+            const values: string[] = []
+            const collected: CollectedElement[] = []
+            for (const element of Array.from(
+                document.querySelectorAll('[dir]'),
+            )) {
+                const value = element.getAttribute('dir') ?? ''
+                if (['ltr', 'rtl', 'auto'].includes(value.toLowerCase())) {
+                    continue
+                }
+                values.push(value)
+                collected.push(
+                    __baliseElementInfo(element, {
+                        'Valeur de dir': value === '' ? '(vide)' : value,
+                        'Valeurs attendues': 'ltr ou rtl',
+                    }),
+                )
+            }
+            return { values, collected }
+        })
+        if (invalid.values.length === 0) return []
         return [
             {
                 criterionId: '8.10',
                 status: 'non_conforme',
-                comment: `${invalid.length} attribut(s) dir avec une valeur invalide (ex : "${invalid[0]}") — valeurs attendues : ltr ou rtl`,
+                comment: `${invalid.values.length} attribut(s) dir avec une valeur invalide (ex : "${invalid.values[0]}") — valeurs attendues : ltr ou rtl`,
+                occurrences: await buildOccurrences(page, invalid.collected),
             },
         ]
     },
@@ -258,21 +337,32 @@ export const headingHierarchyCheck: Check = {
                     : 2
             })
             const detected: { from: number; to: number }[] = []
+            const collected: CollectedElement[] = []
             for (let i = 1; i < levels.length; i++) {
                 const previous = levels[i - 1]
                 const current = levels[i]
+                const heading = headings[i]
                 if (
-                    previous !== undefined &&
-                    current !== undefined &&
-                    current > previous + 1
+                    previous === undefined ||
+                    current === undefined ||
+                    heading === undefined ||
+                    current <= previous + 1
                 ) {
-                    detected.push({ from: previous, to: current })
+                    continue
                 }
+                detected.push({ from: previous, to: current })
+                collected.push(
+                    __baliseElementInfo(heading, {
+                        'Titre précédent': `h${previous}`,
+                        'Niveau de ce titre': `h${current}`,
+                        'Niveau attendu': `h${previous + 1} au plus`,
+                    }),
+                )
             }
-            return detected
+            return { detected, collected }
         })
-        if (skips.length > 0) {
-            const details = skips
+        if (skips.detected.length > 0) {
+            const details = skips.detected
                 .map((skip) => `h${skip.from} suivi de h${skip.to}`)
                 .join(', ')
             return [
@@ -280,6 +370,7 @@ export const headingHierarchyCheck: Check = {
                     criterionId: '9.1',
                     status: 'non_conforme',
                     comment: `Saut de niveau détecté : ${details}`,
+                    occurrences: await buildOccurrences(page, skips.collected),
                 },
             ]
         }
@@ -295,7 +386,7 @@ export const headingHierarchyCheck: Check = {
 export const requiredFieldsCheck: Check = {
     name: 'champs obligatoires 11.10',
     run: async ({ page }) => {
-        const missing = await page.evaluate(() => {
+        const unmarkedFields = await page.evaluate(() => {
             const selector = ['input', 'select', 'textarea']
                 .flatMap((tag) => [
                     `${tag}[required]`,
@@ -304,9 +395,8 @@ export const requiredFieldsCheck: Check = {
                 .join(', ')
             const fields = Array.from(document.querySelectorAll(selector))
 
-            // Logique volontairement inline (pas de fonction interne nommée) :
-            // page.evaluate sérialise ce callback, il doit rester autonome.
-            return fields.filter((field) => {
+            const collected: CollectedElement[] = []
+            for (const field of fields) {
                 const texts: string[] = []
                 const id = field.getAttribute('id')
                 if (id) {
@@ -325,21 +415,42 @@ export const requiredFieldsCheck: Check = {
                         if (target) texts.push(target.textContent ?? '')
                     }
                 }
-                const joined = texts.join(' ').toLowerCase()
-                return !(
-                    joined.includes('*') ||
-                    joined.includes('obligatoire') ||
-                    joined.includes('requis') ||
-                    joined.includes('required')
+                const label = texts.join(' ').replace(/\s+/g, ' ').trim()
+                const lowered = label.toLowerCase()
+                if (
+                    lowered.includes('*') ||
+                    lowered.includes('obligatoire') ||
+                    lowered.includes('requis') ||
+                    lowered.includes('required')
+                ) {
+                    continue
+                }
+
+                collected.push(
+                    __baliseElementInfo(field, {
+                        Champ:
+                            field.getAttribute('name') ??
+                            id ??
+                            field.tagName.toLowerCase(),
+                        'Étiquette':
+                            label === ''
+                                ? 'aucune étiquette trouvée'
+                                : `« ${label.slice(0, 120)} »`,
+                        'Marqueur technique': field.hasAttribute('required')
+                            ? 'required'
+                            : 'aria-required="true"',
+                    }),
                 )
-            }).length
+            }
+            return collected
         })
-        if (missing === 0) return []
+        if (unmarkedFields.length === 0) return []
         return [
             {
                 criterionId: '11.10',
                 status: 'non_conforme',
-                comment: `${missing} champ(s) obligatoire(s) (required/aria-required) sans indication visible du caractère obligatoire dans leur étiquette (test 11.10.2)`,
+                comment: `${unmarkedFields.length} champ(s) obligatoire(s) (required/aria-required) sans indication visible du caractère obligatoire dans leur étiquette (test 11.10.2)`,
+                occurrences: await buildOccurrences(page, unmarkedFields),
             },
         ]
     },
@@ -432,15 +543,21 @@ export const metaRefreshCheck: Check = {
 export const marqueeCheck: Check = {
     name: 'contenu en mouvement 13.8',
     run: async ({ page }) => {
-        const count = await page.evaluate(
-            () => document.querySelectorAll('marquee, blink').length,
+        const movingElements = await page.evaluate(() =>
+            Array.from(document.querySelectorAll('marquee, blink')).map(
+                (element) =>
+                    __baliseElementInfo(element, {
+                        Balise: `<${element.tagName.toLowerCase()}>`,
+                    }),
+            ),
         )
-        if (count === 0) return []
+        if (movingElements.length === 0) return []
         return [
             {
                 criterionId: '13.8',
                 status: 'non_conforme',
-                comment: `${count} élément(s) <marquee> ou <blink> détecté(s) : contenu en mouvement ou clignotant sans mécanisme de contrôle (tests 13.8.1 et 13.8.2)`,
+                comment: `${movingElements.length} élément(s) <marquee> ou <blink> détecté(s) : contenu en mouvement ou clignotant sans mécanisme de contrôle (tests 13.8.1 et 13.8.2)`,
+                occurrences: await buildOccurrences(page, movingElements),
             },
         ]
     },

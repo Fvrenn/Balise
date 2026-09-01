@@ -58,6 +58,36 @@ export function OverviewContent({ auditId, audit }: OverviewContentProps) {
           </ul>
         </section>
 
+        <section className="overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
+            <h2 className="font-heading text-base font-semibold text-foreground">
+              Échantillon ({audit.pages.length} page
+              {audit.pages.length > 1 ? "s" : ""})
+            </h2>
+            <Link
+              href={`/audits/${auditId}/pages`}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Gérer l&apos;échantillon
+            </Link>
+          </div>
+          <ul className="divide-y divide-border">
+            {audit.pages.map((page) => (
+              <li
+                key={page.id}
+                className="flex items-center gap-4 px-4 py-2.5 text-sm"
+              >
+                <span className="w-44 shrink-0 truncate text-foreground">
+                  {page.label}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                  {page.url}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
         <section className="space-y-3">
           <h2 className="text-xs font-medium tracking-wide text-muted-foreground">
             LIVRABLES

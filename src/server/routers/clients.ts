@@ -126,6 +126,7 @@ export const clientsRouter = router({
             const assigneesByAudit = await getAssigneesByAudit(
                 ctx.db,
                 clientAudits.map((audit) => audit.id),
+                ctx.organizationId,
             )
 
             return {

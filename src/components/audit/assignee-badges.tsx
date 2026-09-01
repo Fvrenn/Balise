@@ -1,5 +1,6 @@
 "use client"
 
+import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import {
   HoverCard,
@@ -9,7 +10,14 @@ import {
 
 // Forme minimale d'un assigné côté UI : nom pour le badge, email pour la carte au
 // survol. Structurellement identique à ce que renvoient les procédures tRPC.
-export type AssigneeSummary = { userId: string; name: string; email: string }
+// isActiveMember = false quand l'auditeur a été retiré du cabinet : ses audits
+// lui restent assignés, l'Owner doit voir qu'ils sont à réassigner.
+export type AssigneeSummary = {
+  userId: string
+  name: string
+  email: string
+  isActiveMember: boolean
+}
 
 // Badge(s) résumant les assignés : nom du premier (le plus ancien) puis « +N » s'il
 // en reste d'autres. Sans assigné (cas limite, normalement empêché par le minimum à
@@ -26,7 +34,13 @@ export function AssigneeBadgesInline({
   const [first, ...rest] = assignees
   return (
     <span className="inline-flex items-center gap-1">
-      <Badge variant="secondary" className="max-w-[10rem] truncate">
+      <Badge
+        variant="secondary"
+        className={cn(
+          "max-w-[10rem] truncate",
+          !first.isActiveMember && "line-through opacity-60",
+        )}
+      >
         {first.name}
       </Badge>
       {rest.length > 0 ? <Badge variant="outline">+{rest.length}</Badge> : null}
@@ -53,6 +67,11 @@ export function AssigneeHoverList({
             <span className="text-sm font-medium text-foreground">
               {assignee.name}
             </span>
+            {!assignee.isActiveMember && (
+              <Badge variant="outline" className="ml-1.5 align-middle">
+                Auditeur désactivé
+              </Badge>
+            )}
             <span className="block text-xs text-muted-foreground">
               {assignee.email}
             </span>

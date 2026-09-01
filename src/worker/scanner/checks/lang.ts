@@ -1,3 +1,4 @@
+import { buildOccurrences } from '@/worker/scanner/checks/occurrences'
 import type { Check, CheckResult } from '@/worker/scanner/checks/types'
 
 // Checks de langue (critères 8.3, 8.4, 8.8) et validation des codes BCP47.
@@ -69,20 +70,33 @@ export const htmlLangCheck: Check = {
 export const innerLangCheck: Check = {
     name: 'changements de langue 8.8',
     run: async ({ page }) => {
-        const langs = await page.evaluate(() =>
+        // Le code est validé côté worker (isValidLang n'est pas sérialisable) :
+        // le navigateur ne fait que remonter la valeur et le repère de l'élément.
+        const langElements = await page.evaluate(() =>
             Array.from(document.querySelectorAll('[lang]'))
                 .filter((element) => element !== document.documentElement)
-                .map((element) => element.getAttribute('lang') ?? ''),
+                .map((element) => ({
+                    lang: (element.getAttribute('lang') ?? '').trim(),
+                    element: __baliseElementInfo(element),
+                })),
         )
-        const invalid = langs.filter(
-            (lang) => lang.trim() !== '' && !isValidLang(lang.trim()),
+        const invalid = langElements.filter(
+            (candidate) =>
+                candidate.lang !== '' && !isValidLang(candidate.lang),
         )
         if (invalid.length === 0) return []
         return [
             {
                 criterionId: '8.8',
                 status: 'non_conforme',
-                comment: `${invalid.length} changement(s) de langue avec un code invalide (ex : "${invalid[0]}")`,
+                comment: `${invalid.length} changement(s) de langue avec un code invalide (ex : "${invalid[0]?.lang}")`,
+                occurrences: await buildOccurrences(
+                    page,
+                    invalid.map((candidate) => ({
+                        ...candidate.element,
+                        details: { 'Code de langue': candidate.lang },
+                    })),
+                ),
             },
         ]
     },

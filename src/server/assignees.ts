@@ -12,7 +12,14 @@ import {
 // Forme exposée d'un assigné : le strict nécessaire pour l'affichage (badge, liste
 // au survol) et la pré-sélection des cases. Toujours trié par assignedAt croissant,
 // donc le premier élément est le plus ancien assigné, de façon stable.
-export type AssigneeSummary = { userId: string; name: string; email: string }
+// isActiveMember distingue un auditeur retiré du cabinet : ses audits lui restent
+// assignés, l'Owner doit voir qu'ils sont à réassigner.
+export type AssigneeSummary = {
+    userId: string
+    name: string
+    email: string
+    isActiveMember: boolean
+}
 
 // Récupère les assignés de plusieurs audits en une requête, regroupés par audit et
 // ordonnés du plus ancien au plus récent (assignedAt, puis id pour départager les
@@ -20,6 +27,7 @@ export type AssigneeSummary = { userId: string; name: string; email: string }
 export async function getAssigneesByAudit(
     db: Database,
     auditIds: string[],
+    organizationId: string,
 ): Promise<Map<string, AssigneeSummary[]>> {
     const byAudit = new Map<string, AssigneeSummary[]>()
     if (auditIds.length === 0) return byAudit
@@ -30,15 +38,30 @@ export async function getAssigneesByAudit(
             userId: auditAssignees.userId,
             name: user.name,
             email: user.email,
+            // Jointure externe : retirer quelqu'un du cabinet supprime son
+            // membership, pas son compte ni ses assignations.
+            memberId: member.id,
         })
         .from(auditAssignees)
         .innerJoin(user, eq(auditAssignees.userId, user.id))
+        .leftJoin(
+            member,
+            and(
+                eq(member.userId, auditAssignees.userId),
+                eq(member.organizationId, organizationId),
+            ),
+        )
         .where(inArray(auditAssignees.auditId, auditIds))
         .orderBy(asc(auditAssignees.assignedAt), asc(auditAssignees.id))
 
     for (const row of rows) {
         const list = byAudit.get(row.auditId) ?? []
-        list.push({ userId: row.userId, name: row.name, email: row.email })
+        list.push({
+            userId: row.userId,
+            name: row.name,
+            email: row.email,
+            isActiveMember: row.memberId !== null,
+        })
         byAudit.set(row.auditId, list)
     }
     return byAudit

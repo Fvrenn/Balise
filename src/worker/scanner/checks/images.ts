@@ -1,5 +1,22 @@
 import { countViolations } from '@/worker/scanner/checks/axe-checks'
+import {
+    axeOccurrences,
+    buildOccurrences,
+    MAX_OCCURRENCES,
+    type CollectedElement,
+} from '@/worker/scanner/checks/occurrences'
 import type { Check } from '@/worker/scanner/checks/types'
+
+// Facettes de 1.1 couvertes par axe ; les autres (svg sans role,
+// object/embed/canvas) sont détectées en page.evaluate et désignent leur
+// élément fautif elles-mêmes.
+const IMAGE_AXE_RULES = [
+    'image-alt',
+    'role-img-alt',
+    'area-alt',
+    'input-image-alt',
+    'svg-img-alt',
+] as const
 
 // Critères 1.1 et 1.2 suivant la méthodologie officielle (docs/RGAA.md).
 // Le verdict reste au niveau du critère, mais il n'est « conforme » que si TOUS
@@ -20,6 +37,8 @@ interface ImageDomFindings {
     // Sujets dont le caractère informatif est invérifiable automatiquement
     // (img[ismap] — test 1.1.4, svg/canvas/object nus) : on ne conclut pas.
     undeterminedCount: number
+    // Éléments fautifs des facettes ci-dessus, pour les situer dans la page.
+    elements: CollectedElement[]
 }
 
 const imagesAlternativesCheck: Check = {
@@ -51,12 +70,13 @@ const imagesAlternativesCheck: Check = {
             const hasFallbackContent = (element: Element) =>
                 (element.textContent ?? '').trim().length > 0
 
-            const findings = {
+            const findings: ImageDomFindings = {
                 svgMissingRole: 0,
                 objectViolations: 0,
                 embedViolations: 0,
                 canvasViolations: 0,
                 undeterminedCount: 0,
+                elements: [],
             }
 
             // 1.1.4 — image réactive serveur : l'existence d'un mécanisme
@@ -79,6 +99,14 @@ const imagesAlternativesCheck: Check = {
                 )
                 if (hasTextAlternative(svg) || hasSvgTitle) {
                     findings.svgMissingRole += 1
+                    findings.elements.push(
+                        __baliseElementInfo(svg, {
+                            Élément: '<svg>',
+                            Test: '1.1.5',
+                            Problème:
+                                'alternative textuelle présente, mais role="img" absent',
+                        }),
+                    )
                 } else {
                     findings.undeterminedCount += 1
                 }
@@ -91,19 +119,27 @@ const imagesAlternativesCheck: Check = {
             const embeddedSubjects: {
                 selector: string
                 allowsFallback: boolean
+                test: string
                 key: 'objectViolations' | 'embedViolations' | 'canvasViolations'
             }[] = [
                 {
                     selector: 'object[type^="image/"]',
                     allowsFallback: true,
+                    test: '1.1.6',
                     key: 'objectViolations',
                 },
                 {
                     selector: 'embed[type^="image/"]',
                     allowsFallback: false,
+                    test: '1.1.7',
                     key: 'embedViolations',
                 },
-                { selector: 'canvas', allowsFallback: true, key: 'canvasViolations' },
+                {
+                    selector: 'canvas',
+                    allowsFallback: true,
+                    test: '1.1.8',
+                    key: 'canvasViolations',
+                },
             ]
             for (const subject of embeddedSubjects) {
                 for (const element of Array.from(
@@ -120,6 +156,14 @@ const imagesAlternativesCheck: Check = {
                     if (hasAdjacentAlternative(element)) continue
                     if (hasTextAlternative(element)) {
                         findings[subject.key] += 1
+                        findings.elements.push(
+                            __baliseElementInfo(element, {
+                                Élément: `<${element.tagName.toLowerCase()}>`,
+                                Test: subject.test,
+                                Problème:
+                                    'alternative textuelle non exposée : ni role="img", ni contenu de repli, ni lien ou bouton adjacent',
+                            }),
+                        )
                     } else {
                         findings.undeterminedCount += 1
                     }
@@ -182,6 +226,14 @@ const imagesAlternativesCheck: Check = {
                     criterionId: '1.1',
                     status: 'non_conforme',
                     comment: violations.join(' ; '),
+                    occurrences: [
+                        ...(await axeOccurrences({
+                            page,
+                            axeResults,
+                            ruleIds: IMAGE_AXE_RULES,
+                        })),
+                        ...(await buildOccurrences(page, dom.elements)),
+                    ].slice(0, MAX_OCCURRENCES),
                 },
             ]
         }
@@ -203,22 +255,33 @@ const imagesAlternativesCheck: Check = {
 const decorativeImagesCheck: Check = {
     name: 'images décoratives 1.2 (tests 1.2.1 à 1.2.6)',
     run: async ({ page }) => {
-        const { declaredCount, misusedCount } = await page.evaluate(() => {
+        const { declaredCount, misused } = await page.evaluate(() => {
             const declared = Array.from(
                 document.querySelectorAll(
                     'img[alt=""], img[role="presentation"], img[role="none"], img[aria-hidden="true"], area:not([href]), svg[aria-hidden="true"], canvas[aria-hidden="true"], object[type^="image/"][aria-hidden="true"], embed[type^="image/"][aria-hidden="true"]',
                 ),
             )
-            const misused = declared.filter((element) => {
-                const hasContradiction =
-                    element.hasAttribute('aria-label') ||
-                    element.hasAttribute('aria-labelledby') ||
-                    (element.getAttribute('title') ?? '').trim() !== '' ||
-                    element.getAttribute('role') === 'img'
+
+            const misused: CollectedElement[] = []
+            for (const element of declared) {
+                const reasons: string[] = []
+                if (element.hasAttribute('aria-label')) reasons.push('aria-label')
+                if (element.hasAttribute('aria-labelledby')) {
+                    reasons.push('aria-labelledby')
+                }
+                if ((element.getAttribute('title') ?? '').trim() !== '') {
+                    reasons.push('attribut title')
+                }
+                if (element.getAttribute('role') === 'img') {
+                    reasons.push('role="img"')
+                }
+
                 const tag = element.tagName.toLowerCase()
-                if (tag === 'area') {
-                    const alt = element.getAttribute('alt') ?? ''
-                    return hasContradiction || alt.trim() !== ''
+                if (
+                    tag === 'area' &&
+                    (element.getAttribute('alt') ?? '').trim() !== ''
+                ) {
+                    reasons.push('attribut alt renseigné')
                 }
                 if (tag === 'svg') {
                     // 1.2.4 : un svg décoratif ne doit contenir ni <title>/<desc>
@@ -226,32 +289,43 @@ const decorativeImagesCheck: Check = {
                     const hasNamedChild = Array.from(
                         element.querySelectorAll('title, desc'),
                     ).some((child) => (child.textContent ?? '').trim() !== '')
-                    const hasChildTitleAttr =
-                        element.querySelector('[title]') !== null
-                    return hasContradiction || hasNamedChild || hasChildTitleAttr
+                    if (hasNamedChild) reasons.push('<title> ou <desc> renseigné')
+                    if (element.querySelector('[title]')) {
+                        reasons.push('attribut title sur un enfant')
+                    }
                 }
-                if (tag === 'canvas' || tag === 'object') {
+                if (
+                    (tag === 'canvas' || tag === 'object') &&
+                    (element.textContent ?? '').trim() !== ''
+                ) {
                     // 1.2.3 / 1.2.5 : pas de texte faisant office d'alternative
                     // entre les balises d'une image décorative.
-                    return (
-                        hasContradiction ||
-                        (element.textContent ?? '').trim() !== ''
-                    )
+                    reasons.push('contenu de repli textuel')
                 }
-                return hasContradiction
-            })
-            return {
-                declaredCount: declared.length,
-                misusedCount: misused.length,
+
+                if (reasons.length === 0) continue
+                misused.push(
+                    __baliseElementInfo(element, {
+                        Élément: `<${tag}>`,
+                        'Déclarée décorative par':
+                            element.getAttribute('aria-hidden') === 'true'
+                                ? 'aria-hidden="true"'
+                                : (element.getAttribute('role') ??
+                                  'alt="" ou absence de href'),
+                        'Alternatives en contradiction': reasons.join(', '),
+                    }),
+                )
             }
+            return { declaredCount: declared.length, misused }
         })
         if (declaredCount === 0) return []
-        if (misusedCount > 0) {
+        if (misused.length > 0) {
             return [
                 {
                     criterionId: '1.2',
                     status: 'non_conforme',
-                    comment: `${misusedCount} image(s) déclarée(s) décorative(s) (alt="", role="presentation" ou aria-hidden) portant aussi une alternative textuelle (aria-label, aria-labelledby, title ou <title>/<desc>) — tests 1.2.1 à 1.2.6`,
+                    comment: `${misused.length} image(s) déclarée(s) décorative(s) (alt="", role="presentation" ou aria-hidden) portant aussi une alternative textuelle (aria-label, aria-labelledby, title ou <title>/<desc>) — tests 1.2.1 à 1.2.6`,
+                    occurrences: await buildOccurrences(page, misused),
                 },
             ]
         }

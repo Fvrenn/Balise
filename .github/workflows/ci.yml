@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: TypeScript
+        run: pnpm tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint
+
+      # Les checks du scanner tournent dans un vrai Chromium : sans navigateur
+      # installé, la suite échoue au démarrage.
+      - name: Installer Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Tests du scanner
+        run: pnpm test:scan
+
+      - name: Build
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+          BETTER_AUTH_SECRET: "ci-placeholder-secret-longue-chaine"
+          BETTER_AUTH_URL: "http://localhost:3000"
+          DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
+          REDIS_URL: "redis://localhost:6379"

@@ -25,6 +25,7 @@ import { ScanLauncher } from "./scan-launcher"
 
 const TABS = [
   { segment: "criteria", label: "Grille des critères" },
+  { segment: "pages", label: "Échantillon" },
   { segment: "overview", label: "Vue d'ensemble" },
   { segment: "reports", label: "Livrables" },
 ] as const

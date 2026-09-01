@@ -28,6 +28,7 @@ const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
     jpeg: 'image/jpeg',
     svg: 'image/svg+xml',
     webp: 'image/webp',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 }
 
 const FALLBACK_CONTENT_TYPE = 'application/octet-stream'

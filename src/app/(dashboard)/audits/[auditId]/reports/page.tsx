@@ -1,8 +1,12 @@
 import { FileSpreadsheet, FileText } from "lucide-react"
 
+import { getServerApi } from "@/trpc/server"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ExportExcelButton } from "@/components/audit/export-excel-button"
+
+import { ExportHistory } from "./export-history"
+import { MissingCommentsNotice } from "./missing-comments-notice"
 
 export default async function ReportsPage({
   params,
@@ -10,6 +14,11 @@ export default async function ReportsPage({
   params: Promise<{ auditId: string }>
 }) {
   const { auditId } = await params
+  const api = await getServerApi()
+  const [findingsMissingComment, previousExports] = await Promise.all([
+    api.audits.listFindingsMissingComment({ auditId }),
+    api.audits.listExports({ auditId }),
+  ])
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 px-6 py-8">
@@ -21,6 +30,11 @@ export default async function ReportsPage({
           Exportez la grille d&apos;audit ou générez le rapport de conformité.
         </p>
       </div>
+
+      <MissingCommentsNotice
+        auditId={auditId}
+        findings={findingsMissingComment}
+      />
 
       <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-surface p-5">
         <div className="flex items-start gap-3">
@@ -56,6 +70,8 @@ export default async function ReportsPage({
           Télécharger
         </Button>
       </div>
+
+      <ExportHistory auditId={auditId} exports={previousExports} />
     </div>
   )
 }

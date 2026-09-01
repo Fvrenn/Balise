@@ -1,5 +1,6 @@
 import { Fragment, memo, useState } from "react"
-import { Copy } from "lucide-react"
+import { Check, Copy, MapPin } from "lucide-react"
+import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import type { FindingSource, FindingStatus } from "@/lib/rgaa"
@@ -30,6 +31,7 @@ export interface FindingState {
 }
 
 type SamplePage = AuditDetail["pages"][number]
+type Occurrence = AuditFindingRow["occurrences"][number]
 
 interface StatusOption {
   value: FindingStatus
@@ -198,6 +200,10 @@ function CriterionRowComponent({
         </div>
       </div>
 
+      {showNonConformeDetails && finding.occurrences.length > 0 ? (
+        <OccurrenceList occurrences={finding.occurrences} />
+      ) : null}
+
       {showNonConformeDetails ? (
         <div className="space-y-1.5 rounded-lg bg-surface-2 p-3">
           <p className="text-[11px] font-medium uppercase tracking-wide text-destructive">
@@ -222,6 +228,108 @@ function CriterionRowComponent({
         open={detailOpen}
         onOpenChange={setDetailOpen}
       />
+    </div>
+  )
+}
+
+// Les éléments précis relevés par le scanner pour ce critère : ils répondent à la
+// question que le commentaire laisse ouverte (« 2 textes au contraste
+// insuffisant » — lesquels ?). L'auditrice les vérifie sur la page, puis ils
+// alimentent le livrable client.
+function OccurrenceList({ occurrences }: { occurrences: Occurrence[] }) {
+  return (
+    <div className="space-y-2 rounded-lg border border-border bg-surface-2 p-3">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        Éléments concernés · {occurrences.length}
+      </p>
+      <ul className="space-y-2">
+        {occurrences.map((occurrence, index) => (
+          <li key={`${occurrence.selector}-${index}`}>
+            <OccurrenceCard occurrence={occurrence} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+// Une valeur de preuve qui est une couleur s'affiche en pastille : c'est
+// immédiatement parlant, là où un code hexadécimal seul demande un effort.
+const COLOR_VALUE = /^#[0-9a-f]{3,8}$/i
+
+function OccurrenceCard({ occurrence }: { occurrence: Occurrence }) {
+  const [isCopied, setIsCopied] = useState(false)
+  const details = Object.entries(occurrence.details ?? {})
+
+  async function handleCopySelector() {
+    try {
+      await navigator.clipboard.writeText(occurrence.selector)
+      setIsCopied(true)
+      setTimeout(() => setIsCopied(false), 1500)
+    } catch {
+      toast.error(
+        "Copie impossible — sélectionnez le sélecteur à la main pour le coller dans les outils de développement.",
+      )
+    }
+  }
+
+  return (
+    <div className="space-y-1.5 rounded-md border border-border bg-background p-2.5">
+      <div className="flex items-start justify-between gap-3">
+        {occurrence.landmark ? (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground">
+            <MapPin className="size-3 shrink-0 text-muted-foreground" />
+            {occurrence.landmark}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">
+            Emplacement non déterminé
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={handleCopySelector}
+          title="Copier le sélecteur CSS pour le coller dans les outils de développement"
+          className="inline-flex shrink-0 items-center gap-1 rounded px-1 py-0.5 font-mono text-[11px] text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/40"
+        >
+          {isCopied ? (
+            <Check className="size-3 text-success" />
+          ) : (
+            <Copy className="size-3" />
+          )}
+          {occurrence.selector}
+        </button>
+      </div>
+
+      {occurrence.text ? (
+        <p className="text-sm text-foreground">« {occurrence.text} »</p>
+      ) : null}
+
+      {details.length > 0 ? (
+        <dl className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          {details.map(([label, value]) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <dt className="text-[11px] text-muted-foreground">{label}</dt>
+              <dd className="flex items-center gap-1 text-xs font-medium text-foreground">
+                {COLOR_VALUE.test(value) ? (
+                  <span
+                    // Couleur relevée sur le site audité : valeur dynamique, hors
+                    // design system par nature.
+                    style={{ backgroundColor: value }}
+                    className="size-3 rounded-full border border-border"
+                    aria-hidden
+                  />
+                ) : null}
+                {value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+
+      <code className="block overflow-x-auto whitespace-pre rounded bg-muted px-2 py-1 font-mono text-[11px] text-muted-foreground">
+        {occurrence.html}
+      </code>
     </div>
   )
 }
